@@ -1,0 +1,223 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../models/user_info_model.dart';
+import '../../services/user_service.dart';
+
+class UserInforScreen extends StatefulWidget {
+  const UserInforScreen({super.key});
+
+  @override
+  State<UserInforScreen> createState() => _UserInforScreenState();
+}
+
+class _UserInforScreenState extends State<UserInforScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  Future<UserInfoModel?>? _futureUser;
+  String? _token;
+  String? _userId;
+  String? _userName; // ✅ Lưu username ẩn để gửi lại khi update
+
+  final _nameController = TextEditingController();
+  final _moTaController = TextEditingController();
+  final _phoneController = TextEditingController();
+  int? _gioiTinh;
+  File? _selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAndLoadUser();
+  }
+
+  Future<void> _initAndLoadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString("jwt_token");
+    _userId = prefs.getString("user_id");
+
+    if (_token == null || _userId == null) {
+      setState(() => _futureUser = Future.value(null));
+      return;
+    }
+
+    setState(() {
+      _futureUser = UserService.getUserByUserId(_userId!);
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked != null) setState(() => _selectedImage = File(picked.path));
+  }
+
+  Future<void> _updateUser() async {
+    if (_token == null || _userName == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Vui lòng đăng nhập lại.")),
+      );
+      return;
+    }
+
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tên người dùng không được để trống.")),
+      );
+      return;
+    }
+
+    final result = await UserService.updateInfoUser(
+      userName: _userName!, // ✅ gửi lại username cũ
+      nameND: _nameController.text.trim(),
+      moTa: _moTaController.text.trim(),
+      gioiTinh: _gioiTinh,
+      phoneNumber: _phoneController.text.trim(),
+      avatarPath: _selectedImage?.path,
+      token: _token!,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result["message"] ?? "Cập nhật xong")),
+    );
+
+    if (result["success"] == true) {
+      setState(() {
+        _futureUser = UserService.getUserByUserId(_userId!);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Thông tin người dùng")),
+      body: _futureUser == null
+          ? const Center(child: CircularProgressIndicator())
+          : FutureBuilder<UserInfoModel?>(
+        future: _futureUser!,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Bạn chưa đăng nhập hoặc không tìm thấy người dùng.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    child: const Text("Đăng nhập ngay"),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final user = snapshot.data!;
+          _userName = user.userName; // ✅ Lưu username để gửi lại khi update
+          _nameController.text = user.nameND ?? "";
+          _moTaController.text = user.moTa ?? "";
+          _phoneController.text = user.phoneNumber ?? "";
+          _gioiTinh ??= user.gioiTinh;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundImage: _selectedImage != null
+                              ? FileImage(_selectedImage!)
+                              : (user.avatarND != null
+                              ? NetworkImage(user.avatarND!)
+                          as ImageProvider
+                              : const AssetImage(
+                              "assets/avatar_placeholder.png")),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.camera_alt),
+                          onPressed: _pickImage,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Tên người dùng",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: "Giới tính",
+                      border: OutlineInputBorder(),
+                    ),
+                    value: _gioiTinh,
+                    items: const [
+                      DropdownMenuItem(value: 0, child: Text("Nam")),
+                      DropdownMenuItem(value: 1, child: Text("Nữ")),
+                      DropdownMenuItem(value: 2, child: Text("Khác")),
+                    ],
+                    onChanged: (v) => setState(() => _gioiTinh = v),
+                  ),
+                  const SizedBox(height: 10),
+
+                  TextFormField(
+                    controller: _moTaController,
+                    decoration: const InputDecoration(
+                      labelText: "Mô tả",
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 10),
+
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: "Số điện thoại",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save),
+                      label: const Text("Cập nhật"),
+                      onPressed: _updateUser, // ✅ chỉ gửi userName ẩn
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
