@@ -49,8 +49,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (role == "Admin") {
           Navigator.pushReplacementNamed(context, '/admin');
-        } else {
-          Navigator.pushReplacementNamed(context, '/home');
+        } else if (role == "Parent"){
+          Navigator.pushReplacementNamed(context, '/navigationbar');
+        }
+        else{
+          Navigator.pushReplacementNamed(context, '/navigationbarchild');
         }
       } else {
         setState(() => _errorMessage = result["message"] ?? "Đăng nhập thất bại");

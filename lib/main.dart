@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend_qlte/screens/admin/admin_user_screen.dart';
 import 'package:frontend_qlte/screens/auth/login_screen.dart';
 import 'package:frontend_qlte/screens/auth/registration_screen.dart';
 import 'package:frontend_qlte/screens/client/chat_message_list_screen.dart';
 import 'package:frontend_qlte/screens/client/home_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_screen.dart';
-import 'package:frontend_qlte/screens/client/user_infor_screen.dart';
-import 'package:frontend_qlte/utils/notification_helper.dart';
+import 'package:frontend_qlte/screens/common/navigation_bar_child_screen.dart';
+import 'package:frontend_qlte/screens/common/navigation_bar_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +36,9 @@ class MyApp extends StatelessWidget {
         '/admin': (context) => const AdminScreen(),
         '/register': (context) => const RegistrationScreen(),
         '/chatmassagelist': (context) => const ChatMessageListScreen(),
+        '/navigationbar': (context) => const NavigationBarScreen(),
+        '/navigationbarchild': (context) => const NavigationBarChildScreen(),
+
       },
     );
   }
