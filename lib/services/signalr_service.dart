@@ -46,4 +46,15 @@ class SignalRService {
       onUpdate(id, lat, lng);
     });
   }
+
+  void onChildLeftSafeZone(Function(Map<String, dynamic>) onUpdate) {
+  _connection?.on("ChildLeftSafeZone", (args) {
+    if (args != null && args.isNotEmpty && args[0] is Map) {
+      final data = args[0] as Map<String, dynamic>;
+      onUpdate(data); // Gọi callback truyền dữ liệu ra ngoài
+    } else {
+      print("⚠️ Dữ liệu nhận từ SignalR không hợp lệ: $args");
+    }
+  });
+}
 }

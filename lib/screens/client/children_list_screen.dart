@@ -51,27 +51,26 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                 }
 
                 final children = snapshot.data!.data;
-
+                
                 return ListView.builder(
                   itemCount: children.length,
                   itemBuilder: (context, index) {
                     final child = children[index];
                     final inSafeZone = child.trangThai.toLowerCase() == "true";
-
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundImage:
                             (child.anhDaiDien.isNotEmpty &&
-                                child.anhDaiDien[0] != null)
+                                child.anhDaiDien != null)
                             ? NetworkImage(
-                                "${Config_URL.urlServer}${child.anhDaiDien[0]}",
+                                "${Config_URL.urlServer}${child.anhDaiDien}",
                               )
                             : null,
                         child:
                             (child.anhDaiDien.isEmpty ||
-                                child.anhDaiDien[0] == null)
+                                child.anhDaiDien == null)
                             ? Text(
-                                child.hoTen.isNotEmpty ? child.hoTen[0] : "?",
+                                child.hoTen.isNotEmpty ? child.hoTen : "?",
                               )
                             : null,
                       ),

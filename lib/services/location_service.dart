@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 class LocationService {
   static final String _baseUrl = '${Config_URL.baseUrl}Location';
 
-  static Future<LocationHistoryResponseModel> getChildrenByUserId(
+  static Future<LocationHistoryResponseModel> getLocationHistoryNewByChildId(
     String childId,
     String token,
   ) async {
@@ -39,4 +39,7 @@ class LocationService {
       );
     }
   }
+
+  
+
 }
