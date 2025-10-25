@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/config_url.dart';
+import '../utils/jwt_helper.dart';
+import '../utils/http_response_helper.dart';
+import 'package:frontend_qlte/services/child_service.dart';
 
 class AuthService {
-  // đường dẫn tới API login
   String get apiUrl => "${Config_URL.baseUrl}Auth/LoginUserToken";
 
   Future<Map<String, dynamic>> login(String account, String password) async {
@@ -20,62 +21,111 @@ class AuthService {
       );
 
       print("🔗 API Login URL = $apiUrl");
-      print("📤 Request body: ${jsonEncode({"account": account, "password": password})}");
+      print("📥 Status: ${response.statusCode}");
+      print("📥 Body: ${response.body}");
+
+      // ✅ Gọi helper để xử lý response tự động
+      final result = HttpResponseHelper.handleStatus(response);
+
+      // 🟢 Nếu là phản hồi thành công
+      if (response.statusCode == 200 && result["success"] == true) {
+        return await _handleSuccessResponse(response);
+      }
+
+      return result;
+    } catch (e) {
+      return {"success": false, "message": "Lỗi mạng hoặc server không phản hồi: $e"};
+    }
+  }
+
+  /// ✅ Xử lý khi đăng nhập thành công
+  Future<Map<String, dynamic>> _handleSuccessResponse(http.Response response) async {
+    try {
+      final data = jsonDecode(response.body);
+      final tokenData = data['data'];
+      if (tokenData == null || tokenData['token'] == null) {
+        return {"success": false, "message": "Không nhận được token từ server."};
+      }
+
+      final token = tokenData['token'];
+      final refreshToken = tokenData['refreshToken'];
+
+      // 🧠 Giải mã thông tin từ token
+      final role = JwtHelper.getRole(token);
+      final userId = JwtHelper.getUserId(token) ?? '';
+      final email = JwtHelper.getEmail(token) ?? 'Không rõ';
+
+      print("🧩 Role: $role | UserId: $userId | Email: $email");
+
+      // 💾 Lưu token & user info
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('jwt_token', token);
+      await prefs.setString('refresh_token', refreshToken);
+      if (userId.isNotEmpty) await prefs.setString('user_id', userId);
+
+      // 🧒 Nếu là tài khoản trẻ em => gọi thêm API để lấy child_id
+      if (role == "Children") {
+        final childId = await _fetchChildIdByUserId(userId, token);
+        if (childId != null && childId.isNotEmpty) {
+          await prefs.setString('child_id', childId);
+          print("🧒 Saved child_id (from API): $childId");
+        } else {
+          print("⚠️ Không thể lấy child_id cho userId: $userId");
+        }
+      }
+
+      // 👨‍👧 Nếu là Parent => tự động lấy danh sách Children
+      else if (role == "Parent") {
+        try {
+          print("👨‍👧 Bắt đầu tải danh sách con cho Parent userId=$userId ...");
+          final childrenResponse = await ChildService.getChildrenByUserId(userId, token);
+
+          if (childrenResponse.status && childrenResponse.data.isNotEmpty) {
+            final firstChild = childrenResponse.data.first;
+            await prefs.setString('child_id', firstChild.childId);
+            print("✅ Saved first child_id for Parent: ${firstChild.childId}");
+          } else {
+            print("⚠️ Parent không có con nào trong hệ thống.");
+          }
+        } catch (e) {
+          print("❌ Lỗi khi tải danh sách con cho Parent: $e");
+        }
+      }
+
+      return {
+        "success": true,
+        "message": "Đăng nhập thành công!",
+        "token": token,
+        "refreshToken": refreshToken,
+        "decodedToken": JwtHelper.decodeToken(token),
+      };
+    } catch (e) {
+      return {"success": false, "message": "Lỗi khi xử lý phản hồi đăng nhập: $e"};
+    }
+  }
+
+  /// 🔍 Gọi API lấy ChildId theo UserId
+  Future<String?> _fetchChildIdByUserId(String userId, String token) async {
+    final url = Uri.parse("${Config_URL.baseUrl}Child/GetChildByUserId?userId=$userId");
+
+    try {
+      final response = await http.get(url, headers: {
+        "Authorization": "Bearer $token",
+      });
+
+      print("🌐 Fetching ChildId from: $url");
       print("📥 Response status: ${response.statusCode}");
-      print("📥 Response body: ${response.body}");
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        bool status = data['status'] ?? false;
-        if (!status) {
-          return {"success": false, "message": data['msg'] ?? "Đăng nhập thất bại"};
+        final json = jsonDecode(response.body);
+        if (json["status"] == true && json["data"]?["childId"] != null) {
+          return json["data"]["childId"].toString();
         }
-
-        // ✅ Lấy token từ bên trong data["data"]
-        final tokenData = data['data'];
-        if (tokenData == null || tokenData['token'] == null) {
-          return {"success": false, "message": "Không nhận được token từ server."};
-        }
-
-        String token = tokenData['token'];
-        String refreshToken = tokenData['refreshToken'];
-
-        // ✅ Decode token để lấy thông tin user
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        print("🧩 Decoded token: $decodedToken");
-
-        // ✅ Trích xuất UserId đúng key ASP.NET Identity
-        final userId =
-            decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
-                ?? decodedToken['sub']
-                ?? '';
-
-        // ✅ Lưu token, refresh token và user_id vào SharedPreferences
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString('jwt_token', token);
-        prefs.setString('refresh_token', refreshToken);
-        if (userId.isNotEmpty) {
-          prefs.setString('user_id', userId);
-          print("✅ Saved user_id: $userId");
-        } else {
-          print("⚠️ Không tìm thấy userId trong token!");
-        }
-
-        return {
-          "success": true,
-          "token": token,
-          "refreshToken": refreshToken,
-          "decodedToken": decodedToken,
-        };
-      } else {
-        return {
-          "success": false,
-          "message": "Failed to login: ${response.statusCode}"
-        };
       }
+      return null;
     } catch (e) {
-      return {"success": false, "message": "Network error: $e"};
+      print("❌ Lỗi khi gọi API lấy childId: $e");
+      return null;
     }
   }
 }

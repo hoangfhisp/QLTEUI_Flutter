@@ -31,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // 🔹 Gọi API đăng nhập
       final result = await Auth.login(account, password);
 
       if (!mounted) return;
@@ -39,27 +40,74 @@ class _LoginScreenState extends State<LoginScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("jwt_token", result["token"]);
 
+        // ✅ Giải mã token
         final decoded = result["decodedToken"];
         final role = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
         final email = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
 
+        // 🎉 Hiển thị thông báo chào mừng
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Xin chào $email — Vai trò: $role")),
         );
 
+        // 🧒 Nếu là tài khoản trẻ em → đợi đến khi có child_id
+        if (role == "Children") {
+          String? childId;
+          for (int i = 0; i < 5; i++) {
+            // đợi child_id từ AuthService (đã gọi API GetChildByUserId)
+            childId = prefs.getString("child_id");
+            if (childId != null && childId.isNotEmpty) break;
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+
+          if (childId == null || childId.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("⚠️ Không thể lấy thông tin Child. Vui lòng thử lại."),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            setState(() => _isLoading = false);
+            return;
+          }
+
+          print("✅ Child ID loaded: $childId");
+        }
+
+        // ✅ Điều hướng theo vai trò
         if (role == "Admin") {
           Navigator.pushReplacementNamed(context, '/admin');
-        } else if (role == "Parent"){
+        } else if (role == "Parent") {
           Navigator.pushReplacementNamed(context, '/navigationbar');
-        }
-        else{
+        } else if (role == "Children") {
           Navigator.pushReplacementNamed(context, '/navigationbarchild');
+        } else {
+          Navigator.pushReplacementNamed(context, '/login');
         }
       } else {
-        setState(() => _errorMessage = result["message"] ?? "Đăng nhập thất bại");
+        // ⚠️ Nếu API trả về lỗi (status=false)
+        final msg = result["message"] ?? result["msg"] ?? "Đăng nhập thất bại, vui lòng thử lại.";
+        setState(() => _errorMessage = msg);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
-      setState(() => _errorMessage = "Lỗi kết nối: $e");
+      setState(() => _errorMessage = "Đăng nhập thất bại: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Lỗi: $e"),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -67,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = Colors.teal.shade600; // màu chủ đạo KidGuardian
+    final themeColor = Colors.teal.shade600; // 🎨 Màu chủ đạo KidGuardian
 
     return Scaffold(
       backgroundColor: Colors.teal.shade50,
@@ -77,11 +125,9 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // ✅ Logo biểu tượng trẻ em / gia đình
+              // ✅ Logo KidGuardian
               Icon(Icons.family_restroom, size: 90, color: themeColor),
-
               const SizedBox(height: 10),
-
               const Text(
                 "Ứng dụng KidGuardian",
                 style: TextStyle(
@@ -90,20 +136,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: Colors.black87,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               const Text(
                 "Bảo vệ & đồng hành cùng con yêu mỗi ngày",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.black54,
-                ),
+                style: TextStyle(fontSize: 15, color: Colors.black54),
               ),
-
               const SizedBox(height: 30),
 
-              // Ô nhập tài khoản
+              // 🔹 Nhập tài khoản
               TextField(
                 controller: _accountController,
                 decoration: InputDecoration(
@@ -116,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Ô nhập mật khẩu
+              // 🔹 Nhập mật khẩu
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -128,10 +168,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
 
-              // Hiển thị lỗi
+              // ⚠️ Hiển thị lỗi
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -142,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-              // Nút đăng nhập
+              // 🔘 Nút đăng nhập
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -165,10 +204,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
 
-              // Nút đăng ký
+              // 🔹 Nút đăng ký
               TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/register');
@@ -182,11 +220,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // Nút quên mật khẩu
+              // 🔹 Nút quên mật khẩu
               TextButton(
-                onPressed: () {
-                  // Tạm thời bỏ trống
-                },
+                onPressed: () {},
                 child: Text(
                   "Quên mật khẩu?",
                   style: TextStyle(color: themeColor),

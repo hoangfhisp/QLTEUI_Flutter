@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/screens/client/children_list_screen.dart';
 import 'package:frontend_qlte/screens/client/home_screen.dart';
+import 'package:frontend_qlte/screens/client/sos_request_parent_screen.dart'; // ✅ Màn hình SOS
+import 'package:frontend_qlte/services/signalr_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NavigationBarScreen extends StatefulWidget {
   const NavigationBarScreen({super.key});
@@ -12,17 +15,73 @@ class NavigationBarScreen extends StatefulWidget {
 class _NavigationBarScreenState extends State<NavigationBarScreen> {
   int _selectedIndex = 0;
   late final List<Widget> _widgetOptions;
+  final SignalRService _signalR = SignalRService();
+
+  bool _isNavigating = false; // 🔒 Ngăn chặn push nhiều lần khi có nhiều SOS tới
 
   @override
   void initState() {
     super.initState();
+    _initSignalR(); // ✅ Khởi động lắng nghe realtime SOS
 
     _widgetOptions = <Widget>[
-      const HomeScreen(), // đây là trang Home bạn muốn gọi
+      const HomeScreen(),
       const ChildrenListScreen(),
       const Center(child: Text('Trang Message (Demo)', style: TextStyle(fontSize: 20))),
       const Center(child: Text('Trang Cài Đặt (Demo)', style: TextStyle(fontSize: 20))),
     ];
+  }
+
+  /// ✅ Kết nối SOSHub và lắng nghe realtime từ child
+  Future<void> _initSignalR() async {
+    try {
+      await _signalR.connectSOS();
+      print("🛰️ Parent connected to SOSHub");
+
+      // 🧩 Lấy childId để join vào group SOS riêng của từng con
+      final prefs = await SharedPreferences.getInstance();
+      final childId = prefs.getString('child_id');
+
+      if (childId != null && childId.isNotEmpty) {
+        await _signalR.joinSOSGroup(childId);
+        print("👨‍👧 Parent joined SOS group for child-$childId");
+      } else {
+        print("⚠️ Không tìm thấy child_id trong SharedPreferences.");
+      }
+
+      // 🚨 Lắng nghe SOS realtime
+      _signalR.onReceiveSOS((data) async {
+        print("🚨 Parent nhận SOS realtime: $data");
+
+        if (!mounted || _isNavigating) return; // Ngăn push trùng
+        _isNavigating = true;
+
+        // 🔔 Hiển thị cảnh báo nhanh
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("🚨 Cảnh báo khẩn cấp! Con bạn vừa gửi tín hiệu SOS!"),
+            backgroundColor: Colors.redAccent,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // 🕒 Chờ 1 chút để người dùng đọc cảnh báo
+        await Future.delayed(const Duration(seconds: 1));
+
+        // ⏩ Chuyển sang màn hình SOS chi tiết
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SOSRequestParentScreen(sosData: data),
+          ),
+        );
+
+        _isNavigating = false; // 🔓 Cho phép điều hướng lại
+      });
+
+    } catch (e) {
+      print("❌ Lỗi khi kết nối SOS realtime: $e");
+    }
   }
 
   void _onItemTapped(int index) {
@@ -32,9 +91,15 @@ class _NavigationBarScreenState extends State<NavigationBarScreen> {
   }
 
   @override
+  void dispose() {
+    _signalR.disconnectAll(); // 🔌 Ngắt toàn bộ kết nối SignalR khi thoát
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Quản Lý Thú Cưng')),
+      appBar: AppBar(title: const Text('Quản Lý Trẻ Em')),
       body: _widgetOptions[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
