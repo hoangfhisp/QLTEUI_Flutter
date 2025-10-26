@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/models/device_info_model.dart';
 import 'package:frontend_qlte/services/device_info_service.dart';
+import 'package:frontend_qlte/services/signalr_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DeviceDetailChildScreen extends StatefulWidget {
@@ -23,12 +24,67 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
   bool _isLocked = false;
   Timer? _statusTimer;
 
+  final SignalRService _signalRService = SignalRService();
+
   @override
   void initState() {
     super.initState();
     _isTracking = widget.device.isTracking;
     _isLocked = widget.device.isLocked;
+
+    _initSignalR();
+
     if (_isTracking) _startAutoUpdateStatus();
+  }
+
+  /// 🛰️ Khởi tạo và lắng nghe SignalR
+  Future<void> _initSignalR() async {
+    try {
+      await _signalRService.connectDeviceHub();
+
+      // 🛰️ Nhận sự kiện thay đổi theo dõi
+      _signalRService.onDeviceTrackingChanged((data) {
+        final isTracking = data["isTracking"] ?? false;
+        print("📡 [Realtime] Trạng thái theo dõi thay đổi: $isTracking");
+
+        setState(() {
+          _isTracking = isTracking;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isTracking
+                ? "🔵 Thiết bị đang được theo dõi"
+                : "⚪ Thiết bị đã dừng theo dõi"),
+            backgroundColor: isTracking ? Colors.green : Colors.grey,
+          ),
+        );
+
+        if (isTracking) {
+          _startAutoUpdateStatus();
+        } else {
+          _stopAutoUpdateStatus();
+        }
+      });
+
+      // 🔒 Nhận sự kiện khoá thiết bị
+      _signalRService.onDeviceLocked((data) {
+        setState(() => _isLocked = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("🔒 Thiết bị đã bị khoá bởi phụ huynh")),
+        );
+      });
+
+      // 🔓 Nhận sự kiện mở khoá thiết bị
+      _signalRService.onDeviceUnlocked((data) {
+        setState(() => _isLocked = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("🔓 Thiết bị đã được mở khoá")),
+        );
+      });
+    } catch (e) {
+      print("⚠️ Lỗi khi khởi tạo SignalR trong DeviceDetailChildScreen: $e");
+    }
   }
 
   /// 🧩 Bật / Tắt tracking
@@ -108,7 +164,7 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
   void _startAutoUpdateStatus() {
     _stopAutoUpdateStatus(); // dừng nếu có timer cũ
     _statusTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
-      if (!mounted) return; // nếu người dùng đã thoát màn hình
+      if (!mounted) return;
       try {
         final randomPin = 60 + Random().nextInt(40); // 60–99%
         await DeviceInfoService.updateStatus(
@@ -116,10 +172,8 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
           pin: randomPin,
           online: true,
         );
-        // ignore: avoid_print
         print("📡 [Auto] Đã cập nhật trạng thái thiết bị ${widget.device.tenThietBi}");
       } catch (e) {
-        // ignore: avoid_print
         print("⚠️ [Auto] Lỗi cập nhật: $e");
       }
     });
@@ -134,6 +188,7 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
   @override
   void dispose() {
     _stopAutoUpdateStatus();
+    _signalRService.disconnectDeviceHub();
     super.dispose();
   }
 
@@ -157,8 +212,9 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
               child: Icon(
                 Icons.phone_android,
                 size: 100,
-                color:
-                device.trangThaiOnline ? Colors.green : Colors.grey,
+                color: device.trangThaiOnline
+                    ? Colors.green
+                    : Colors.grey,
               ),
             ),
             const SizedBox(height: 20),
@@ -205,9 +261,8 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
                     style: const TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isLocked
-                        ? Colors.green
-                        : Colors.redAccent,
+                    backgroundColor:
+                    _isLocked ? Colors.green : Colors.redAccent,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
                     shape: RoundedRectangleBorder(

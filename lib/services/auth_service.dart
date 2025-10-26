@@ -62,6 +62,7 @@ class AuthService {
       await prefs.setString('jwt_token', token);
       await prefs.setString('refresh_token', refreshToken);
       if (userId.isNotEmpty) await prefs.setString('user_id', userId);
+      await prefs.setString('role', role);
 
       // 🧒 Nếu là tài khoản trẻ em => gọi thêm API để lấy child_id
       if (role == "Children") {
@@ -69,6 +70,28 @@ class AuthService {
         if (childId != null && childId.isNotEmpty) {
           await prefs.setString('child_id', childId);
           print("🧒 Saved child_id (from API): $childId");
+
+          // 🔍 Gọi tiếp API DeviceInfo/GetByChild để lấy deviceId
+          final deviceUrl = Uri.parse("${Config_URL.baseUrl}DeviceInfo/GetByChild?childId=$childId");
+          final deviceResponse = await http.get(deviceUrl, headers: {
+            "Authorization": "Bearer $token",
+          });
+
+          print("🌐 Fetching DeviceInfo from: $deviceUrl");
+          print("📥 Response status: ${deviceResponse.statusCode}");
+
+          if (deviceResponse.statusCode == 200) {
+            final json = jsonDecode(deviceResponse.body);
+            if (json["status"] == true && json["data"]?["deviceId"] != null) {
+              final deviceId = json["data"]["deviceId"].toString();
+              await prefs.setString('device_id', deviceId);
+              print("💾 Saved device_id=$deviceId for child=$childId");
+            } else {
+              print("⚠️ Không tìm thấy deviceId trong phản hồi DeviceInfo/GetByChild.");
+            }
+          } else {
+            print("⚠️ Lỗi khi gọi DeviceInfo/GetByChild: ${deviceResponse.statusCode}");
+          }
         } else {
           print("⚠️ Không thể lấy child_id cho userId: $userId");
         }

@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/screens/client/child/home_children_screen.dart';
 import 'package:frontend_qlte/services/location_auto_sender.dart';
 import 'package:frontend_qlte/services/signalr_service.dart';
+import 'package:frontend_qlte/services/device_info_service.dart';
 import 'package:frontend_qlte/utils/jwt_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
@@ -21,7 +23,10 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
   late final List<Widget> _widgetOptions;
   final LocationAutoSender _locationAutoSender = LocationAutoSender();
   final SignalRService _signalRService = SignalRService();
+
   bool _isLocked = false;
+  Timer? _statusTimer;
+
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
 
@@ -30,7 +35,9 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
     super.initState();
     _startAutoLocation();
     _initSignalR();
+    _startAutoUpdateStatus(); // ✅ auto cập nhật pin / online định kỳ
 
+    // 🔁 Hiệu ứng rung icon khi bị khóa
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -39,6 +46,7 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15)
         .animate(CurvedAnimation(parent: _animController, curve: Curves.easeInOut));
 
+    // Các tab chính
     _widgetOptions = <Widget>[
       const HomeChildrenScreen(),
       const Center(
@@ -53,18 +61,22 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
     ];
   }
 
+  // 🛰️ Khởi tạo và lắng nghe SignalR
   Future<void> _initSignalR() async {
     try {
       await _signalRService.connectDeviceHub();
 
+      // 🔒 Nhận sự kiện khoá thiết bị
       _signalRService.onDeviceLocked((data) async {
         setState(() => _isLocked = true);
+
         // rung nhẹ khi bị khoá
         if (await Vibration.hasVibrator() ?? false) {
           Vibration.vibrate(pattern: [0, 400, 150, 400]);
         }
       });
 
+      // 🔓 Nhận sự kiện mở khoá thiết bị
       _signalRService.onDeviceUnlocked((data) {
         setState(() => _isLocked = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -79,6 +91,7 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
     }
   }
 
+  // 📡 Bắt đầu chia sẻ vị trí tự động
   Future<void> _startAutoLocation() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("jwt_token") ?? "";
@@ -91,15 +104,57 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
     }
   }
 
+  // 🔋 Gửi thông tin trạng thái thiết bị định kỳ
+  void _startAutoUpdateStatus() {
+    _stopAutoUpdateStatus(); // dừng nếu đã có timer cũ
+
+    // ⚡ Gửi cập nhật ngay lập tức khi app khởi động
+    _updateStatusNow();
+
+    // ⏱️ Sau đó gửi định kỳ mỗi 5 phút
+    _statusTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+      _updateStatusNow();
+    });
+  }
+
+  // 📤 Gửi thông tin pin + online hiện tại
+  Future<void> _updateStatusNow() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final deviceId = prefs.getString("device_id");
+      if (deviceId == null) {
+        print("⚠️ Không tìm thấy device_id trong SharedPreferences");
+        return;
+      }
+
+      final randomPin = 60 + Random().nextInt(40); // 60–99%
+      await DeviceInfoService.updateStatus(
+        deviceId: deviceId,
+        pin: randomPin,
+        online: true,
+      );
+
+      print("📡 [Auto] Gửi trạng thái thiết bị (pin=$randomPin%) cho deviceId=$deviceId");
+    } catch (e) {
+      print("⚠️ [Auto] Lỗi khi cập nhật trạng thái thiết bị: $e");
+    }
+  }
+
+  void _stopAutoUpdateStatus() {
+    _statusTimer?.cancel();
+    _statusTimer = null;
+  }
+
   @override
   void dispose() {
     _locationAutoSender.stop();
+    _stopAutoUpdateStatus(); // ✅ dừng timer khi thoát
     _animController.dispose();
     super.dispose();
   }
 
   void _onItemTapped(int index) {
-    if (_isLocked) return; // chặn thao tác
+    if (_isLocked) return; // chặn thao tác khi bị khoá
     setState(() => _selectedIndex = index);
   }
 
@@ -118,6 +173,8 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
                 onPressed: () async {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.remove('jwt_token');
+                  await prefs.remove('device_id');
+                  await prefs.remove('child_id');
 
                   if (!context.mounted) return;
                   Navigator.pushReplacementNamed(context, '/login');
@@ -164,31 +221,33 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
         if (_isLocked)
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.75),
-              child: Center(
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.lock_rounded, size: 120, color: Colors.redAccent),
-                      const SizedBox(height: 30),
-                      const Text(
-                        "Thiết bị của bạn đã bị khóa",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+              color: Colors.black.withOpacity(0.8),
+              child: SafeArea(
+                child: Center(
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.lock_rounded, size: 120, color: Colors.redAccent),
+                        SizedBox(height: 30),
+                        Text(
+                          "Thiết bị của bạn đã bị khóa",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "Phụ huynh đã tạm thời khóa thiết bị này.\nVui lòng chờ mở khóa để tiếp tục sử dụng.",
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                        SizedBox(height: 16),
+                        Text(
+                          "Phụ huynh đã tạm thời khóa thiết bị này.\nVui lòng chờ mở khóa để tiếp tục sử dụng.",
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

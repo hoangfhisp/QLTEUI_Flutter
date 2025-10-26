@@ -206,7 +206,7 @@ class SignalRService {
     }
   }
 
-  // Kết nối tới DeviceHub
+  // 🔌 Kết nối tới DeviceHub
   Future<void> connectDeviceHub({int maxRetries = 3}) async {
     int attempt = 0;
     bool connected = false;
@@ -216,40 +216,69 @@ class SignalRService {
       try {
         print("🔌 [DeviceHub] Kết nối lần $attempt ...");
 
-        if (_deviceConnection != null && _deviceConnection!.state == HubConnectionState.Connected) {
-          print("⚡ DeviceHub đã kết nối, bỏ qua reconnect.");
+        // ⚙️ Nếu đã có connection và đang connected thì bỏ qua
+        if (_deviceConnection != null &&
+            _deviceConnection!.state == HubConnectionState.Connected) {
+          print("⚡ DeviceHub đã kết nối sẵn, bỏ qua reconnect.");
           connected = true;
           break;
         }
 
-        final newConn = HubConnectionBuilder()
+        // ✅ Tạo connection mới
+        final connection = HubConnectionBuilder()
             .withUrl("${Config_URL.urlServer}deviceHub")
+            .withAutomaticReconnect()
             .build();
 
-        _deviceConnection = newConn;
+        _deviceConnection = connection;
 
+        // ⏳ Timeout sau 4s
         await Future.any([
-          newConn.start()!,
-          Future.delayed(const Duration(seconds: 4), () => throw TimeoutException("DeviceHub start timed out")),
+          connection.start()!,
+          Future.delayed(
+            const Duration(seconds: 4),
+                () => throw TimeoutException("DeviceHub start timed out"),
+          ),
         ]);
 
         print("📡 DeviceHub connected thành công ở lần $attempt!");
         connected = true;
 
-        // ✅ Lấy childId từ local storage (sau khi login)
+        // ✅ Lấy thông tin từ SharedPreferences
         final prefs = await SharedPreferences.getInstance();
-        final childId = prefs.getString("child_id");
+        String? childId = prefs.getString("child_id");
+        String? role = prefs.getString("role");
 
-        if (childId != null && childId.isNotEmpty) {
-          await joinDeviceGroup(childId);
-          print("✅ Joined Device group-$childId");
-        } else {
-          print("⚠️ Không tìm thấy child_id trong SharedPreferences (Parent/Child chưa login).");
+        // 🔁 Retry nhẹ nếu chưa có child_id (đợi AuthService lưu xong)
+        int retry = 0;
+        while ((childId == null || childId.isEmpty) && retry < 5) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          childId = prefs.getString("child_id");
+          retry++;
         }
+
+        // 🎯 Kiểm tra role + childId
+        if ((role == "Child" || role == "Children") &&
+            childId != null &&
+            childId.isNotEmpty) {
+          await joinDeviceGroup(childId);
+          print("✅ [DeviceHub] Child joined Device group-$childId");
+        }
+        // 👨‍👧 Parent cũng join để nhận trạng thái cập nhật thiết bị (pin, online)
+        else if (role == "Parent" &&
+            childId != null &&
+            childId.isNotEmpty) {
+          await joinDeviceGroup(childId);
+          print("👨‍👧 [DeviceHub] Parent joined Device group-$childId (for status updates)");
+        }
+        else {
+          print("⚠️ Không tìm thấy child_id hoặc role không hợp lệ (role=$role, childId=$childId)");
+        }
+
       } catch (e) {
         print("⚠️ DeviceHub kết nối thất bại lần $attempt: $e");
         if (attempt < maxRetries) {
-          await Future.delayed(const Duration(seconds: 1));
+          await Future.delayed(const Duration(seconds: 2));
         }
       }
     }
@@ -260,48 +289,72 @@ class SignalRService {
     }
   }
 
-  // Tham gia group (theo ChildId)
+  // 👥 Tham gia group theo ChildId
   Future<void> joinDeviceGroup(String childId) async {
-    if (_deviceConnection == null || _deviceConnection!.state != HubConnectionState.Connected) {
+    if (_deviceConnection == null ||
+        _deviceConnection!.state != HubConnectionState.Connected) {
       print("⚠️ DeviceHub chưa sẵn sàng, đang kết nối lại...");
       await connectDeviceHub();
     }
 
     try {
       await _deviceConnection!.invoke("JoinGroup", args: [childId]);
-      print("👥 Joined Device group-$childId");
+      print("👥 Đã join group thiết bị-$childId");
     } catch (e) {
-      print("⚠️ Error joining Device group: $e");
+      print("⚠️ Lỗi khi join Device group: $e");
     }
   }
 
-  // Nhận sự kiện khóa thiết bị
+  // 🔒 Nhận sự kiện khoá thiết bị (Child nhận)
   void onDeviceLocked(Function(Map<String, dynamic>) onLocked) {
     _deviceConnection?.on("DeviceLocked", (args) {
       if (args == null || args.isEmpty) return;
-      final data = args.first;
-      print("🔒 Device Locked: $data");
-      if (data is Map<String, dynamic>) onLocked(data);
+      final raw = args.first;
+      print("🔒 [DeviceHub] Nhận DeviceLocked: $raw");
+      if (raw is Map) onLocked(Map<String, dynamic>.from(raw));
     });
   }
 
-  // Nhận sự kiện mở khóa
+  // 🔓 Nhận sự kiện mở khoá thiết bị (Child nhận)
   void onDeviceUnlocked(Function(Map<String, dynamic>) onUnlocked) {
     _deviceConnection?.on("DeviceUnlocked", (args) {
       if (args == null || args.isEmpty) return;
-      final data = args.first;
-      print("🔓 Device Unlocked: $data");
-      if (data is Map<String, dynamic>) onUnlocked(data);
+      final raw = args.first;
+      print("🔓 [DeviceHub] Nhận DeviceUnlocked: $raw");
+      if (raw is Map) onUnlocked(Map<String, dynamic>.from(raw));
     });
   }
 
-  // Nhận cập nhật trạng thái pin / online
+  // 🔋 Nhận sự kiện cập nhật trạng thái pin/online (Parent nhận)
   void onDeviceStatusUpdated(Function(Map<String, dynamic>) onUpdate) {
     _deviceConnection?.on("DeviceStatusUpdated", (args) {
       if (args == null || args.isEmpty) return;
-      final data = args.first;
-      print("📡 Device Status Updated: $data");
-      if (data is Map<String, dynamic>) onUpdate(data);
+      final raw = args.first;
+      print("📡 [DeviceHub] Device Status Updated: $raw");
+      if (raw is Map) onUpdate(Map<String, dynamic>.from(raw));
     });
+  }
+
+  // 🛰️ Nhận sự kiện thay đổi trạng thái theo dõi (Parent & Child nhận)
+  void onDeviceTrackingChanged(Function(Map<String, dynamic>) onChanged) {
+    _deviceConnection?.on("DeviceTrackingChanged", (args) {
+      if (args == null || args.isEmpty) return;
+      final raw = args.first;
+      print("🛰️ [DeviceHub] Nhận DeviceTrackingChanged: $raw");
+      if (raw is Map) onChanged(Map<String, dynamic>.from(raw));
+    });
+  }
+
+  // 🧹 Ngắt kết nối thủ công
+  Future<void> disconnectDeviceHub() async {
+    try {
+      if (_deviceConnection != null &&
+          _deviceConnection!.state == HubConnectionState.Connected) {
+        await _deviceConnection!.stop();
+        print("❎ Đã ngắt kết nối DeviceHub.");
+      }
+    } catch (e) {
+      print("⚠️ Lỗi khi disconnect DeviceHub: $e");
+    }
   }
 }
