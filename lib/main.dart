@@ -8,20 +8,26 @@ import 'package:frontend_qlte/screens/client/child/exam_schedule_children_screen
 import 'package:frontend_qlte/screens/client/child/home_children_screen.dart';
 import 'package:frontend_qlte/screens/client/child/schedule_children_screen.dart';
 import 'package:frontend_qlte/screens/client/child/sos_request_children_screen.dart';
+import 'package:frontend_qlte/screens/client/children_manager_screen.dart';
 import 'package:frontend_qlte/screens/client/device_info_child_screen.dart';
 import 'package:frontend_qlte/screens/client/device_detail_child_screen.dart';
 import 'package:frontend_qlte/screens/client/home_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_screen.dart';
 import 'package:frontend_qlte/screens/client/restriction_parent_screen.dart';
+import 'package:frontend_qlte/screens/client/schedule_parent_screen.dart';
 import 'package:frontend_qlte/screens/client/sos_request_parent_screen.dart';
 import 'package:frontend_qlte/screens/client/study_period_parent_screen.dart';
+import 'package:frontend_qlte/screens/client/user_infor_screen.dart';
 import 'package:frontend_qlte/screens/common/navigation_bar_child_screen.dart';
 import 'package:frontend_qlte/screens/common/navigation_bar_screen.dart';
-import 'package:frontend_qlte/services/signalr_service.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  print("✅ BASE_URL loaded = ${dotenv.env['BASE_URL']}");
+
   runApp(const MyApp());
 }
 
@@ -33,16 +39,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ứng dụng quản lý trẻ em',
       debugShowCheckedModeBanner: false,
-
       navigatorKey: navigatorKey,
-
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: false,
       ),
-
       initialRoute: '/login',
-
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
@@ -55,14 +57,17 @@ class MyApp extends StatelessWidget {
         '/schedule_children': (context) => const ScheduleChildrenScreen(),
         '/exam_schedule_children': (context) => const ExamScheduleChildrenScreen(),
         '/sos_request_children': (context) => const SOSRequestChildrenScreen(),
-        '/sos_request_parent': (context) => const SOSRequestParentScreen(sosData: {},),
+        '/sos_request_parent': (context) => const SOSRequestParentScreen(sosData: {}),
         '/device_info_child': (context) => const DeviceInfoChildScreen(),
         '/device_detail_child': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as DeviceInfoModel;
           return DeviceDetailChildScreen(device: args);
-         },
+        },
         '/study_period_parent': (context) => const StudyPeriodParentScreen(),
         '/restriction_parent': (context) => const RestrictionParentScreen(),
+        '/schedule_parent': (context) => const ScheduleParentScreen(),
+        '/userinfo': (context) => const UserInforScreen(),
+        '/child_manager': (context) => const ChildrenManagerScreen(),
       },
     );
   }

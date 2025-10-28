@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/user_info_model.dart';
 import '../../services/user_service.dart';
+import '../../config/config_url.dart';
 
 class AdminUserScreen extends StatefulWidget {
   const AdminUserScreen({super.key});
@@ -36,8 +37,16 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
     if (avatarND == null || avatarND.isEmpty) {
       return "https://placehold.co/100x100?text=User";
     }
+
+    // Nếu backend trả về full URL thì giữ nguyên
     if (avatarND.startsWith("http")) return avatarND;
-    return "https://bigashrock93.conveyor.cloud/images/users/$avatarND";
+
+    // Nếu trả về tương đối, ghép domain backend
+    final base = Config_URL.baseUrl.replaceFirst("/api/", "");
+    final fixedUrl = "$base$avatarND".replaceAll("//uploads", "/uploads");
+
+    print("🖼️ [AdminUserScreen] Avatar URL: $fixedUrl");
+    return fixedUrl;
   }
 
   /// 🧩 Xem chi tiết User
@@ -146,6 +155,7 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                 }
 
                 final result = await UserService.updateInfoUser(
+                  userId: user.id,
                   userName: user.userName ?? "",
                   nameND: nameController.text.trim(),
                   gioiTinh: gioiTinh,

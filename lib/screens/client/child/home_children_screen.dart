@@ -207,13 +207,6 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
                         context, '/exam_schedule_children'),
                   ),
                   _buildFeatureCard(
-                    icon: Icons.chat,
-                    title: "Tin nhắn từ ba/mẹ",
-                    color: Colors.deepPurpleAccent,
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/chat'),
-                  ),
-                  _buildFeatureCard(
                     icon: Icons.health_and_safety,
                     title: "Theo dõi sức khỏe",
                     color: Colors.teal,

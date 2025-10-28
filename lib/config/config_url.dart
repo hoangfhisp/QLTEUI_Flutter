@@ -6,7 +6,7 @@ class Config_URL {
 
     if (url == null || url.isEmpty) {
       print("⚠️ BASE_URL is not set in the .env file. Using default URL.");
-      url = "https://goodgreybag0.conveyor.cloud/api/";
+      url = "https://lastpurpleboard25.conveyor.cloud/api/";
     }
 
     // 🔧 Đảm bảo có dấu '/' ở cuối để tránh lỗi nối chuỗi
@@ -24,7 +24,7 @@ class Config_URL {
 
     if (url == null || url.isEmpty) {
       print("⚠️ BASE_URL is not set in the .env file. Using default URL.");
-      url = "https://goodgreybag0.conveyor.cloud/api/";
+      url = "https://lastpurpleboard25.conveyor.cloud/api/";
     }
 
     // 🔧 Đảm bảo có dấu '/' ở cuối để tránh lỗi nối chuỗi

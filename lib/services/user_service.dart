@@ -64,7 +64,8 @@ class UserService {
 
   /// 🟢 Cập nhật thông tin người dùng
   static Future<Map<String, dynamic>> updateInfoUser({
-    required String userName, // ✅ bắt buộc
+    required String userId,   // 🟢 bắt buộc
+    required String userName, // 🟢 thêm mới
     String? nameND,
     int? gioiTinh,
     String? moTa,
@@ -77,7 +78,8 @@ class UserService {
     try {
       var request = http.MultipartRequest("PUT", url)
         ..headers["Authorization"] = "Bearer $token"
-        ..fields["UserName"] = userName;
+        ..fields["UserId"] = userId
+        ..fields["UserName"] = userName; // ✅ BẮT BUỘC backend cần
 
       if (nameND != null && nameND.isNotEmpty) {
         request.fields["NameND"] = nameND;
@@ -96,12 +98,9 @@ class UserService {
         request.files.add(await http.MultipartFile.fromPath("AvatarND", avatarPath));
       }
 
-      // 🔍 Ghi log để debug
       print("📤 Gửi request cập nhật:");
       print("  ➤ URL: $url");
-      print("  ➤ Header: Authorization = Bearer $token");
       print("  ➤ Fields: ${request.fields}");
-      if (avatarPath != null) print("  ➤ Có ảnh: $avatarPath");
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);

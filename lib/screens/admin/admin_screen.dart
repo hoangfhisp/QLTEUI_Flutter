@@ -141,28 +141,23 @@ class _AdminScreenState extends State<AdminScreen> {
                 mainAxisSpacing: 16,
                 children: [
                   _buildFeatureCard(
-                    icon: Icons.pets,
-                    title: "Quản lý thú cưng",
-                    color: Colors.orangeAccent,
-                    onTap: () => Navigator.pushNamed(context, '/adminpets'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.assignment_turned_in,
-                    title: "Quản lý yêu cầu nhận nuôi",
-                    color: Colors.green,
-                    onTap: () => Navigator.pushNamed(context, '/adminadoptionrequest'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.vaccines,
-                    title: "Quản lý lịch tiêm phòng",
-                    color: Colors.lightBlue,
-                    onTap: () => Navigator.pushNamed(context, '/adminvaccinationschedule'),
-                  ),
-                  _buildFeatureCard(
                     icon: Icons.people,
                     title: "Quản lý người dùng",
                     color: Colors.deepPurpleAccent,
                     onTap: () => Navigator.pushNamed(context, '/adminusers'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.child_care_sharp,
+                    title: "Quản lý trẻ em của người dùng",
+                    color: Colors.deepOrangeAccent,
+                    onTap: () => Navigator.pushNamed(context, '/adminchildren'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.info_outline,
+                    title: "Thông tin cá nhân",
+                    color: Colors.lightBlueAccent,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/userinfo'),
                   ),
                 ],
               ),

@@ -124,11 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.child_care,
                     title: "Quản lý thông tin trẻ em",
                     color: Colors.purpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/children'),
+                    onTap: () => Navigator.pushNamed(context, '/child_manager'),
                   ),
                   _buildFeatureCard(
+                    icon: Icons.schedule_rounded,
+                    title: "Quản lý thời khoá biểu",
+                    color: Colors.teal,
+                    onTap: () => Navigator.pushNamed(context, '/schedule_parent'),
+                  ),
+
+                  _buildFeatureCard(
                     icon: Icons.schedule,
-                    title: "Quản lý lịch học của trẻ em",
+                    title: "Quản lý thời gian học của trẻ em",
                     color: Colors.lightBlueAccent,
                     onTap: () => Navigator.pushNamed(context, '/study_period_parent'),
                   ),

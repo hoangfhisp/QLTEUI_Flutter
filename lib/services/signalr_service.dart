@@ -731,30 +731,4 @@ class SignalRService {
       ),
     );
   }
-
-  // 🔁 Reconnect tất cả hub khi app resume
-  Future<void> reconnectAll() async {
-    try {
-      print("🧠 [SignalR] Bắt đầu kiểm tra & reconnect các hub...");
-
-      if (_studyConnection == null ||
-          _studyConnection!.state != HubConnectionState.Connected) {
-        await connectStudyHub();
-      }
-
-      if (_restrictionConnection == null ||
-          _restrictionConnection!.state != HubConnectionState.Connected) {
-        await connectRestrictionHub();
-      }
-
-      if (_connection == null ||
-          _connection!.state != HubConnectionState.Connected) {
-        await connect(); // locationHub
-      }
-
-      print("✅ [SignalR] Reconnect tất cả hub thành công!");
-    } catch (e) {
-      print("❌ [SignalR] Lỗi khi reconnectAll: $e");
-    }
-  }
 }
