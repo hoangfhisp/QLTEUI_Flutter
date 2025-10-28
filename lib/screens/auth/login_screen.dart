@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/services/auth.dart';
+import 'package:frontend_qlte/utils/jwt_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +16,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkToken(); // 🔹 kiểm tra token khi mở app
+  }
+
+  // 🔹 Hàm check token
+  Future<void> _checkToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("jwt_token");
+
+    if (token != null && token.isNotEmpty) {     
+      if(JwtHelper.isTokenExpired(token))
+      {
+        await prefs.remove('jwt_token');
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+      final role = JwtHelper.getRole(token);
+      if (role == "Admin") {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else if (role == "Parent") {
+        Navigator.pushReplacementNamed(context, '/navigationbar');
+      } else {
+        Navigator.pushReplacementNamed(context, '/navigationbarchild');
+      }
+    }
+  }
 
   Future<void> _handleLogin() async {
     final account = _accountController.text.trim();
@@ -33,48 +62,26 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 🔹 Gọi API đăng nhập
       final result = await Auth.login(account, password);
-
       if (!mounted) return;
 
       if (result["success"] == true) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("jwt_token", result["token"]);
-
+        String token = await prefs.getString("jwt_token")!;
         // ✅ Giải mã token
-        final decoded = result["decodedToken"];
-        final role = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-        final email = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+        if(token == null || token.isEmpty){
+          await prefs.remove('jwt_token');
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+        final role = JwtHelper.getRole(token);
+        final email = JwtHelper.getEmail(token);
 
         // 🎉 Hiển thị thông báo chào mừng
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Xin chào $email — Vai trò: $role")),
         );
 
-        // 🧒 Nếu là tài khoản trẻ em → đợi đến khi có child_id
-        if (role == "Children") {
-          String? childId;
-          for (int i = 0; i < 5; i++) {
-            // đợi child_id từ AuthService (đã gọi API GetChildByUserId)
-            childId = prefs.getString("child_id");
-            if (childId != null && childId.isNotEmpty) break;
-            await Future.delayed(const Duration(milliseconds: 500));
-          }
-
-          if (childId == null || childId.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("⚠️ Không thể lấy thông tin Child. Vui lòng thử lại."),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-            setState(() => _isLoading = false);
-            return;
-          }
-
-          print("✅ Child ID loaded: $childId");
-        }
-
-        // ✅ Điều hướng theo vai trò
+        // Điều hướng theo role
         if (role == "Admin") {
           Navigator.pushReplacementNamed(context, '/admin');
         } else if (role == "Parent") {

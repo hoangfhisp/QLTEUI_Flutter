@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:frontend_qlte/screens/client/home_screen.dart';
+import 'package:frontend_qlte/screens/client/message/message_screen.dart';
 import 'package:frontend_qlte/screens/client/child/home_children_screen.dart';
 import 'package:frontend_qlte/services/location_auto_sender.dart';
 import 'package:frontend_qlte/services/signalr_service.dart';
 import 'package:frontend_qlte/services/device_info_service.dart';
 import 'package:frontend_qlte/utils/jwt_helper.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
 
@@ -49,11 +52,10 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
     // Các tab chính
     _widgetOptions = <Widget>[
       const HomeChildrenScreen(),
-      const Center(
-        child: Text('📍 Theo dõi vị trí (Tự động gửi)', style: TextStyle(fontSize: 18)),
-      ),
-      const Center(
-        child: Text('💬 Tin nhắn với phụ huynh', style: TextStyle(fontSize: 18)),
+      const Center(child: Text('Trang Vị trí (Tự động gửi)', style: TextStyle(fontSize: 20))),
+      ChangeNotifierProvider(
+        create: (_) => MessageController(),
+        child: const MessageScreen(),
       ),
       const Center(
         child: Text('⚙️ Cài đặt tài khoản', style: TextStyle(fontSize: 18)),
