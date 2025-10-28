@@ -3,7 +3,7 @@ import 'package:frontend_qlte/models/zone/create_danger_zone_request_model.dart'
 import 'package:frontend_qlte/models/zone/create_safe_zone_request_model.dart';
 import 'package:frontend_qlte/models/zone/update_danger_zone_request_model.dart';
 import 'package:frontend_qlte/models/zone/update_safe_zone_request_model.dart';
-import 'package:frontend_qlte/screens/client/zone_select_map_screent.dart';
+import 'package:frontend_qlte/screens/client/zone/zone_select_map_screent.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:frontend_qlte/services/safe_zone_service.dart';
 import 'package:frontend_qlte/services/danger_zone_service.dart';

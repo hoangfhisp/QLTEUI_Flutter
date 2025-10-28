@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_qlte/screens/client/children_list_screen.dart';
+import 'package:frontend_qlte/screens/client/child/children_list_screen.dart';
 import 'package:frontend_qlte/screens/client/home_screen.dart';
+import 'package:frontend_qlte/screens/client/message/message_screen.dart';
 import 'package:frontend_qlte/services/child_service.dart';
 import 'package:frontend_qlte/services/signalr_service.dart';
 import 'package:frontend_qlte/utils/jwt_helper.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NavigationBarScreen extends StatefulWidget {
@@ -23,10 +25,11 @@ class _NavigationBarScreenState extends State<NavigationBarScreen> {
     super.initState();
 
     _widgetOptions = <Widget>[
-      const HomeScreen(), // đây là trang Home bạn muốn gọi
+      const HomeScreen(),
       const ChildrenListScreen(),
-      const Center(
-        child: Text('Trang Message (Demo)', style: TextStyle(fontSize: 20)),
+      ChangeNotifierProvider(
+        create: (_) => MessageController(),
+        child: const MessageScreen(),
       ),
       const Center(
         child: Text('Trang Cài Đặt (Demo)', style: TextStyle(fontSize: 20)),
@@ -70,21 +73,21 @@ class _NavigationBarScreenState extends State<NavigationBarScreen> {
   }
 
   void _showWarningDialog(String title, String content) {
-  if (!mounted) return;
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(title, style: const TextStyle(color: Colors.red)),
-      content: Text(content),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Đóng"),
-        ),
-      ],
-    ),
-  );
-}
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title, style: const TextStyle(color: Colors.red)),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Đóng"),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _onItemTapped(int index) {
     setState(() {

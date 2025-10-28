@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_qlte/models/zone/safe_zone_response_model.dart';
-import 'package:frontend_qlte/screens/client/zone_parent_manager_screen.dart';
+import 'package:frontend_qlte/screens/client/zone/zone_parent_manager_screen.dart';
 import 'package:frontend_qlte/services/location_service.dart';
 import 'package:frontend_qlte/services/safe_zone_service.dart';
 import 'package:frontend_qlte/services/danger_zone_service.dart';

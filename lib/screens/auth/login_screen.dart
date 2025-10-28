@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/services/auth.dart';
+import 'package:frontend_qlte/utils/jwt_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +16,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkToken(); // 🔹 kiểm tra token khi mở app
+  }
+
+  // 🔹 Hàm check token
+  Future<void> _checkToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("jwt_token");
+
+    if (token != null && token.isNotEmpty) {
+      final role = JwtHelper.getRole(token);
+
+      if (role == "Admin") {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else if (role == "Parent") {
+        Navigator.pushReplacementNamed(context, '/navigationbar');
+      } else {
+        Navigator.pushReplacementNamed(context, '/navigationbarchild');
+      }
+    }
+  }
 
   Future<void> _handleLogin() async {
     final account = _accountController.text.trim();
@@ -32,7 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final result = await Auth.login(account, password);
-
       if (!mounted) return;
 
       if (result["success"] == true) {
@@ -47,12 +71,12 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(content: Text("Xin chào $email — Vai trò: $role")),
         );
 
+        // Điều hướng theo role
         if (role == "Admin") {
           Navigator.pushReplacementNamed(context, '/admin');
-        } else if (role == "Parent"){
+        } else if (role == "Parent") {
           Navigator.pushReplacementNamed(context, '/navigationbar');
-        }
-        else{
+        } else {
           Navigator.pushReplacementNamed(context, '/navigationbarchild');
         }
       } else {

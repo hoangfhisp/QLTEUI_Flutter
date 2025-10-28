@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/screens/client/home_screen.dart';
+import 'package:frontend_qlte/screens/client/message/message_screen.dart';
 import 'package:frontend_qlte/services/location_auto_sender.dart';
 import 'package:frontend_qlte/utils/jwt_helper.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NavigationBarChildScreen extends StatefulWidget {
@@ -25,7 +27,10 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen> {
     _widgetOptions = <Widget>[
       const HomeScreen(),
       const Center(child: Text('Trang Vị trí (Tự động gửi)', style: TextStyle(fontSize: 20))),
-      const Center(child: Text('Trang Message (Demo)', style: TextStyle(fontSize: 20))),
+      ChangeNotifierProvider(
+        create: (_) => MessageController(),
+        child: const MessageScreen(),
+      ),
       const Center(child: Text('Trang Cài Đặt (Demo)', style: TextStyle(fontSize: 20))),
     ];
   }
@@ -58,7 +63,6 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Quản Lý Thú Cưng')),
       body: _widgetOptions[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
