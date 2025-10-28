@@ -12,9 +12,12 @@ import 'package:frontend_qlte/screens/client/device_info_child_screen.dart';
 import 'package:frontend_qlte/screens/client/device_detail_child_screen.dart';
 import 'package:frontend_qlte/screens/client/home_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_screen.dart';
+import 'package:frontend_qlte/screens/client/restriction_parent_screen.dart';
 import 'package:frontend_qlte/screens/client/sos_request_parent_screen.dart';
+import 'package:frontend_qlte/screens/client/study_period_parent_screen.dart';
 import 'package:frontend_qlte/screens/common/navigation_bar_child_screen.dart';
 import 'package:frontend_qlte/screens/common/navigation_bar_screen.dart';
+import 'package:frontend_qlte/services/signalr_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +33,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ứng dụng quản lý trẻ em',
       debugShowCheckedModeBanner: false,
+
+      navigatorKey: navigatorKey,
+
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: false,
@@ -55,6 +61,8 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as DeviceInfoModel;
           return DeviceDetailChildScreen(device: args);
          },
+        '/study_period_parent': (context) => const StudyPeriodParentScreen(),
+        '/restriction_parent': (context) => const RestrictionParentScreen(),
       },
     );
   }

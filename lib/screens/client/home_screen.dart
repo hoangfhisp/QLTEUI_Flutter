@@ -122,15 +122,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildFeatureCard(
                     icon: Icons.child_care,
-                    title: "Quản lý thông tin trẻ",
+                    title: "Quản lý thông tin trẻ em",
                     color: Colors.purpleAccent,
                     onTap: () => Navigator.pushNamed(context, '/children'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.schedule,
-                    title: "Theo dõi lịch học",
+                    title: "Quản lý lịch học của trẻ em",
                     color: Colors.lightBlueAccent,
-                    onTap: () => Navigator.pushNamed(context, '/studyperiod'),
+                    onTap: () => Navigator.pushNamed(context, '/study_period_parent'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.phone_android_rounded,
@@ -139,22 +139,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: () => Navigator.pushNamed(context, '/device_info_child'),
                   ),
                   _buildFeatureCard(
+                    icon: Icons.security_rounded,
+                    title: "Quản lý hạn chế cho thiết bị",
+                    color: Colors.deepPurpleAccent,
+                    onTap: () => Navigator.pushNamed(context, '/restriction_parent'),
+                  ),
+                  _buildFeatureCard(
                     icon: Icons.location_on,
                     title: "Định vị trẻ",
                     color: Colors.orangeAccent,
                     onTap: () => Navigator.pushNamed(context, '/tracking'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.chat,
-                    title: "Trò chuyện & Thông báo",
-                    color: Colors.deepPurpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/chat'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.warning_amber_rounded,
-                    title: "Yêu cầu SOS khẩn cấp",
-                    color: Colors.redAccent,
-                    onTap: () => Navigator.pushNamed(context, '/sosrequests'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.settings,
