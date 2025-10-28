@@ -23,7 +23,7 @@ class Config_URL {
 
     if (url == null || url.isEmpty) {
       print("⚠️ BASE_URL is not set in the .env file. Using default URL.");
-      url = "https://firstsagecat76.conveyor.cloud/api/";
+      url = "https://lasttealshed54.conveyor.cloud/api/";
     }
 
     if (!url.endsWith("/")) {

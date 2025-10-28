@@ -18,22 +18,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTokenAndPets();
+    _loadTokenAndUser();
   }
 
-  Future<void> _loadTokenAndPets() async {
+  Future<void> _loadTokenAndUser() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
     if (token != null) {
       final decodedToken = JwtDecoder.decode(token);
+      final role = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
       setState(() {
         _token = token;
         _userEmail = decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] ?? "Không rõ";
-        _role = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? "Không rõ";
+        _role = role ?? "Không rõ";
         _isExpired = JwtDecoder.isExpired(token);
       });
 
+      // 🧩 Nếu không phải Parent thì điều hướng sang HomeChildren
+      if (_role != "Parent") {
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/home_children');
+      }
+    } else {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -47,10 +57,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
+      backgroundColor: Colors.lightBlue.shade50,
       appBar: AppBar(
-        title: const Text("🐾 Trang chủ người dùng"),
-        backgroundColor: Colors.blueAccent,
+        title: const Text("👨‍👩‍👧 KidGuardian - Trang Phụ huynh"),
+        backgroundColor: Colors.indigoAccent,
         actions: [
           IconButton(
             onPressed: _logout,
@@ -66,9 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 👤 Thông tin người dùng
+            // 👤 Thông tin tài khoản
             Card(
-              elevation: 3,
+              elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -76,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const CircleAvatar(
                       radius: 30,
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: Colors.indigo,
                       child: Icon(Icons.person, color: Colors.white, size: 30),
                     ),
                     const SizedBox(width: 16),
@@ -84,8 +94,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Email: $_userEmail", style: const TextStyle(fontSize: 16)),
-                          const SizedBox(height: 4),
+                          Text("📧 Email: $_userEmail", style: const TextStyle(fontSize: 16)),
+                          const SizedBox(height: 6),
+                          Text("🧩 Vai trò: $_role", style: const TextStyle(fontSize: 15, color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -94,24 +105,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            // 🐾 Section gợi ý thú cưng phù hợp
-            const Text(
-              "🐶 Gợi ý thú cưng phù hợp với bạn",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
 
             const Text(
-              "Tính năng chính",
+              "📋 Bảng điều khiển cho Phụ huynh",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 15),
 
-            // 🧩 Grid 3 tính năng chính
+            // 🧩 Lưới chức năng chính
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -119,34 +121,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSpacing: 16,
                 children: [
                   _buildFeatureCard(
-                    icon: Icons.pets,
-                    title: "Quản lý thú cưng",
+                    icon: Icons.child_care,
+                    title: "Quản lý thông tin trẻ",
+                    color: Colors.purpleAccent,
+                    onTap: () => Navigator.pushNamed(context, '/children'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.schedule,
+                    title: "Theo dõi lịch học",
+                    color: Colors.lightBlueAccent,
+                    onTap: () => Navigator.pushNamed(context, '/studyperiod'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.phone_android_rounded,
+                    title: "Thông tin máy của trẻ em",
+                    color: Colors.indigoAccent,
+                    onTap: () => Navigator.pushNamed(context, '/device_info_child'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.location_on,
+                    title: "Định vị trẻ",
                     color: Colors.orangeAccent,
-                    onTap: () => Navigator.pushNamed(context, '/pets'),
+                    onTap: () => Navigator.pushNamed(context, '/tracking'),
                   ),
                   _buildFeatureCard(
-                    icon: Icons.assignment,
-                    title: "Yêu cầu nhận nuôi",
-                    color: Colors.lightGreen,
-                    onTap: () => Navigator.pushNamed(context, '/adoptionrequests'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.vaccines,
-                    title: "Lịch tiêm phòng",
-                    color: Colors.lightBlue,
-                    onTap: () => Navigator.pushNamed(context, '/vaccinationschedule'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.info_outline,
-                    title: "Thông tin người dùng",
+                    icon: Icons.chat,
+                    title: "Trò chuyện & Thông báo",
                     color: Colors.deepPurpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/userinfo'),
+                    onTap: () => Navigator.pushNamed(context, '/chat'),
                   ),
                   _buildFeatureCard(
-                    icon: Icons.chat_bubble_outline,
-                    title: "Đoạn chat",
-                    color: Colors.orangeAccent,
-                    onTap: () => Navigator.pushNamed(context, '/chatmassagelist'),
+                    icon: Icons.warning_amber_rounded,
+                    title: "Yêu cầu SOS khẩn cấp",
+                    color: Colors.redAccent,
+                    onTap: () => Navigator.pushNamed(context, '/sosrequests'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.settings,
+                    title: "Cài đặt tài khoản",
+                    color: Colors.indigo,
+                    onTap: () => Navigator.pushNamed(context, '/userinfo'),
                   ),
                 ],
               ),
@@ -166,11 +180,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: 5,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(18),
             gradient: LinearGradient(
               colors: [color.withOpacity(0.9), color.withOpacity(0.6)],
               begin: Alignment.topLeft,
@@ -181,12 +195,17 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: Colors.white, size: 40),
-                const SizedBox(height: 10),
+                Icon(icon, color: Colors.white, size: 45),
+                const SizedBox(height: 12),
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
