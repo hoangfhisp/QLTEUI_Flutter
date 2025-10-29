@@ -199,13 +199,6 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
                     onTap: () => Navigator.pushNamed(
                         context, '/exam_schedule_children'),
                   ),
-                  _buildFeatureCard(
-                    icon: Icons.info_outline,
-                    title: "Thông tin cá nhân",
-                    color: Colors.lightBlueAccent,
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/userinfo'),
-                  ),
                 ],
               ),
             ),
