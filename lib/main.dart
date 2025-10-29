@@ -4,7 +4,7 @@ import 'package:frontend_qlte/screens/admin/admin_children_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_parent_children_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_refresh_token_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_user_screen.dart';
-import 'package:frontend_qlte/screens/admin/admin_screen.dart';
+import 'package:frontend_qlte/screens/admin/admin_home_screen.dart';
 import 'package:frontend_qlte/screens/auth/login_screen.dart';
 import 'package:frontend_qlte/screens/auth/registration_screen.dart';
 import 'package:frontend_qlte/screens/client/chat_message_list_screen.dart';
@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
-        '/admin': (context) => const AdminScreen(),
+        '/admin': (context) => const AdminHomeScreen(),
         '/admin_user': (context) => const AdminUserScreen(),
         '/register': (context) => const RegistrationScreen(),
         '/chatmassagelist': (context) => const ChatMessageListScreen(),
@@ -95,18 +95,6 @@ class MyApp extends StatelessWidget {
               ),
             );
 
-        // ❌ Mặc định: Route không tồn tại
-          default:
-            return MaterialPageRoute(
-              builder: (_) => const Scaffold(
-                body: Center(
-                  child: Text(
-                    '404 - Route không tồn tại',
-                    style: TextStyle(fontSize: 18, color: Colors.redAccent),
-                  ),
-                ),
-              ),
-            );
         }
       },
     );

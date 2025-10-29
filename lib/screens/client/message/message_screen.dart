@@ -83,7 +83,7 @@ class _MessageScreenState extends State<MessageScreen> {
     final controller = Provider.of<MessageController>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tin nhắn'), centerTitle: true),
+      appBar: AppBar(title: const Text('Tin nhắn'), centerTitle: true,automaticallyImplyLeading: false),
       body: controller.isLoading
           ? const Center(child: CircularProgressIndicator())
           : controller.messages.isEmpty

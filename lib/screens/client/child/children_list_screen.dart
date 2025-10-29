@@ -36,7 +36,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Danh sách Children")),
+      appBar: AppBar(title: const Text("Danh sách Children"),automaticallyImplyLeading: false),
       body: _futureChildren == null
           ? const Center(child: CircularProgressIndicator())
           : FutureBuilder<ChildrenResponse>(
