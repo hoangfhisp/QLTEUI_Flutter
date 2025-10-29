@@ -59,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.lightBlue.shade50,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text("👨‍👩‍👧 KidGuardian - Trang Phụ huynh"),
         backgroundColor: Colors.indigoAccent,
         actions: [
@@ -122,39 +123,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildFeatureCard(
                     icon: Icons.child_care,
-                    title: "Quản lý thông tin trẻ",
+                    title: "Quản lý thông tin trẻ em",
                     color: Colors.purpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/children'),
+                    onTap: () => Navigator.pushNamed(context, '/child_manager'),
                   ),
                   _buildFeatureCard(
+                    icon: Icons.schedule_rounded,
+                    title: "Quản lý thời khoá biểu",
+                    color: Colors.teal,
+                    onTap: () => Navigator.pushNamed(context, '/schedule_parent'),
+                  ),
+
+                  _buildFeatureCard(
                     icon: Icons.schedule,
-                    title: "Theo dõi lịch học",
+                    title: "Quản lý thời gian học của trẻ em",
                     color: Colors.lightBlueAccent,
-                    onTap: () => Navigator.pushNamed(context, '/studyperiod'),
+                    onTap: () => Navigator.pushNamed(context, '/study_period_parent'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.phone_android_rounded,
                     title: "Thông tin máy của trẻ em",
-                    color: Colors.indigoAccent,
+                    color: Colors.orangeAccent,
                     onTap: () => Navigator.pushNamed(context, '/device_info_child'),
                   ),
                   _buildFeatureCard(
-                    icon: Icons.location_on,
-                    title: "Định vị trẻ",
-                    color: Colors.orangeAccent,
-                    onTap: () => Navigator.pushNamed(context, '/tracking'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.chat,
-                    title: "Trò chuyện & Thông báo",
-                    color: Colors.deepPurpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/chat'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.warning_amber_rounded,
-                    title: "Yêu cầu SOS khẩn cấp",
-                    color: Colors.redAccent,
-                    onTap: () => Navigator.pushNamed(context, '/sosrequests'),
+                    icon: Icons.security_rounded,
+                    title: "Quản lý hạn chế cho thiết bị",
+                    color: Colors.deepOrange,
+                    onTap: () => Navigator.pushNamed(context, '/restriction_parent'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.settings,

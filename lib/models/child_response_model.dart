@@ -36,6 +36,8 @@ class Child {
   final String nhomTuoi;
   final String trangThai;
   final String userId;
+  final String? userName;
+  final String? phoneNumber;
 
   Child({
     required this.childId,
@@ -46,6 +48,8 @@ class Child {
     required this.nhomTuoi,
     required this.trangThai,
     required this.userId,
+    this.userName,
+    this.phoneNumber,
   });
 
   factory Child.fromJson(dynamic json) {
@@ -58,6 +62,8 @@ class Child {
       nhomTuoi: json['nhomTuoi']?.toString() ?? '',
       trangThai: json['trangThai']?.toString() ?? '',
       userId: json['userId']?.toString() ?? '',
+      userName: json['userName']?.toString(),
+      phoneNumber: json['phoneNumber']?.toString() ?? '',
     );
   }
 }

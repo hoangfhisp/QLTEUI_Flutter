@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter/services.dart';
+import 'package:frontend_qlte/utils/overlay_permission_helper.dart';
 
 class HomeChildrenScreen extends StatefulWidget {
   const HomeChildrenScreen({super.key});
@@ -15,12 +17,62 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
   String? _token;
   bool _isExpired = false;
 
+  // 🧩 MethodChannel kết nối Android
+  static const platform = MethodChannel("com.frontend_qlte/restriction");
+
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _checkAccessibilityPermission(); // ✅ Kiểm tra quyền Trợ năng khi vào app
+    _checkOverlayPermission(); // 🆕 Thêm kiểm tra quyền overlay
   }
 
+  /// 🟣 Kiểm tra quyền Accessibility
+  Future<void> _checkAccessibilityPermission() async {
+    try {
+      final bool isEnabled =
+      await platform.invokeMethod("isAccessibilityEnabled");
+      if (!isEnabled) {
+        _showEnableAccessibilityDialog();
+      } else {
+        print("✅ Accessibility đã được bật.");
+      }
+    } catch (e) {
+      print("❌ Lỗi kiểm tra quyền Accessibility: $e");
+    }
+  }
+
+  Future<void> _checkOverlayPermission() async {
+    await Future.delayed(const Duration(seconds: 1)); // đợi UI ổn định
+    await OverlayPermissionHelper.requestOverlayPermission();
+  }
+
+  /// 🟢 Hiển thị popup yêu cầu bật quyền Trợ năng
+  void _showEnableAccessibilityDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Yêu cầu quyền quản lý thiết bị"),
+        content: const Text(
+          "Để bật tính năng học tập và chặn ứng dụng, vui lòng bật quyền Trợ năng (Accessibility) cho ứng dụng Frontend_QLTE.",
+          style: TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              platform.invokeMethod("openAccessibilitySettings");
+            },
+            child: const Text("Mở cài đặt"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🧠 Load thông tin người dùng (giữ nguyên)
   Future<void> _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
@@ -28,14 +80,16 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
       final decodedToken = JwtDecoder.decode(token);
       setState(() {
         _token = token;
-        _userEmail = decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
-        _role = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+        _userEmail = decodedToken[
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+        _role = decodedToken[
+        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
         _isExpired = JwtDecoder.isExpired(token);
       });
     }
   }
 
-  /// 🆘 Hiển thị dialog xác nhận SOS
+  /// 🆘 Dialog gửi SOS (giữ nguyên)
   void _showSOSConfirmDialog() {
     showDialog(
       context: context,
@@ -51,9 +105,10 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
             child: const Text("Huỷ"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style:
+            ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              Navigator.pop(context); // đóng dialog
+              Navigator.pop(context);
               Navigator.pushNamed(context, '/sos_request_children');
             },
             child: const Text("Xác nhận"),
@@ -63,6 +118,7 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
     );
   }
 
+  // 🧩 phần build giữ nguyên
   @override
   Widget build(BuildContext context) {
     return _userEmail == null
@@ -77,7 +133,8 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
         ),
         onPressed: _showSOSConfirmDialog,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation:
+      FloatingActionButtonLocation.centerFloat,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -86,7 +143,8 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
             // 👦 Thông tin trẻ
             Card(
               elevation: 3,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -94,16 +152,20 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
                     const CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.teal,
-                      child: Icon(Icons.child_care, color: Colors.white, size: 30),
+                      child: Icon(Icons.child_care,
+                          color: Colors.white, size: 30),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Email: $_userEmail", style: const TextStyle(fontSize: 16)),
+                          Text("Email: $_userEmail",
+                              style: const TextStyle(fontSize: 16)),
                           const SizedBox(height: 4),
-                          Text("Role: $_role", style: const TextStyle(color: Colors.grey)),
+                          Text("Role: $_role",
+                              style: const TextStyle(
+                                  color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -112,14 +174,11 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
-            const Text(
-              "🎯 Hoạt động hôm nay",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            const Text("🎯 Hoạt động hôm nay",
+                style: TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
-
-            // 🧩 Tính năng chính
+            // 🧩 Các tính năng
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -127,55 +186,25 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
                 mainAxisSpacing: 16,
                 children: [
                   _buildFeatureCard(
-                    icon: Icons.school,
-                    title: "Lịch học hôm nay",
-                    color: Colors.indigoAccent,
-                    onTap: () => Navigator.pushNamed(context, '/studyperiod'),
-                  ),
-                  _buildFeatureCard(
                     icon: Icons.event_note,
                     title: "Lịch thời khoá biểu",
                     color: Colors.purpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/schedule_children'),
+                    onTap: () => Navigator.pushNamed(
+                        context, '/schedule_children'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.event_note,
                     title: "Lịch kiểm tra",
                     color: Colors.orangeAccent,
-                    onTap: () => Navigator.pushNamed(context, '/exam_schedule_children'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.chat,
-                    title: "Tin nhắn từ ba/mẹ",
-                    color: Colors.deepPurpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/chat'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.health_and_safety,
-                    title: "Theo dõi sức khỏe",
-                    color: Colors.teal,
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text("Thông báo"),
-                          content: const Text(
-                              "⚙️ Tính năng 'Theo dõi sức khỏe' hiện chưa có.\nChúng tôi đang phát triển thêm!"),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text("Đã hiểu"),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.pushNamed(
+                        context, '/exam_schedule_children'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.info_outline,
                     title: "Thông tin cá nhân",
                     color: Colors.lightBlueAccent,
-                    onTap: () => Navigator.pushNamed(context, '/userinfo'),
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/userinfo'),
                   ),
                 ],
               ),
@@ -196,7 +225,8 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
       onTap: onTap,
       child: Card(
         elevation: 5,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
@@ -230,3 +260,4 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
     );
   }
 }
+

@@ -63,7 +63,8 @@ class UserService {
 
   /// 🟢 Cập nhật thông tin người dùng
   static Future<Map<String, dynamic>> updateInfoUser({
-    required String userName, // ✅ bắt buộc
+    required String userId,   // 🟢 bắt buộc
+    required String userName, // 🟢 thêm mới
     String? nameND,
     int? gioiTinh,
     String? moTa,
@@ -76,7 +77,8 @@ class UserService {
     try {
       var request = http.MultipartRequest("PUT", url)
         ..headers["Authorization"] = "Bearer $token"
-        ..fields["UserName"] = userName;
+        ..fields["UserId"] = userId
+        ..fields["UserName"] = userName; // ✅ BẮT BUỘC backend cần
 
       if (nameND != null && nameND.isNotEmpty) {
         request.fields["NameND"] = nameND;
@@ -97,12 +99,9 @@ class UserService {
         );
       }
 
-      // 🔍 Ghi log để debug
       print("📤 Gửi request cập nhật:");
       print("  ➤ URL: $url");
-      print("  ➤ Header: Authorization = Bearer $token");
       print("  ➤ Fields: ${request.fields}");
-      if (avatarPath != null) print("  ➤ Có ảnh: $avatarPath");
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -126,7 +125,7 @@ class UserService {
   }
 
   /// 🟢 Lấy danh sách người dùng (Admin)
-  static Future<List<UserInfoModel>> getAllUsers({
+  static Future<List<UserResponseModel>> getAllUsers({
     int page = 1,
     int limit = 10,
     required String token,
@@ -143,7 +142,7 @@ class UserService {
 
       if (jsonData["status"] == true && jsonData["data"] != null) {
         final List<dynamic> dataList = jsonData["data"];
-        return dataList.map((e) => UserInfoModel.fromJson(e)).toList();
+        return dataList.map((e) => UserResponseModel.fromJson(e)).toList();
       } else {
         return [];
       }

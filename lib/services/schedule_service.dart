@@ -111,6 +111,7 @@ class ScheduleService {
   /// 🟡 Cập nhật lịch học
   static Future<Map<String, dynamic>> updateSchedule({
     required String scheduleId,
+    required String childId,         // 🟢 Thêm dòng này
     required String tenMonHoc,
     required int thu,
     required String gioBatDau,
@@ -120,6 +121,7 @@ class ScheduleService {
     final url = Uri.parse("${_baseUrl}Update");
     final body = jsonEncode({
       "scheduleId": scheduleId,
+      "childId": childId,            // 🟢 Gửi kèm để backend ModelState hợp lệ
       "tenMonHoc": tenMonHoc,
       "thu": thu,
       "gioBatDau": gioBatDau,

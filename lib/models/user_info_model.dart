@@ -39,7 +39,7 @@ class UserInfoModel {
       email: json["email"],
       phoneNumber: json["phoneNumber"],
       gioiTinh: json["gioiTinh"],
-      moTa: json["moTa"],
+      moTa: json["moTa"] ?? json["mota"],
       avatarND: json["avatarND"],
       authId: json["authId"],
       typeLogin: json["typeLogin"] ?? "Local",
