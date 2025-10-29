@@ -4,7 +4,7 @@ import 'package:frontend_qlte/config/config_url.dart';
 import 'package:frontend_qlte/models/zone/danger_zone_response_model.dart';
 import 'package:frontend_qlte/models/zone/create_danger_zone_request_model.dart';
 import 'package:frontend_qlte/models/zone/update_danger_zone_request_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:frontend_qlte/utils/api_helper.dart';
 
 class DangerZoneService{
   static final String _baseUrl = '${Config_URL.baseUrl}DangerZone';
@@ -12,19 +12,16 @@ class DangerZoneService{
   static Future<DangerZoneResponse> getDangerZoneByUserIdAndChildId(
     String userId,
     String childId,
-    String token,
   ) async {
     try {
-      var uri = Uri.parse('$_baseUrl/GetDangerZoneByUserIdAndChildId?userId=$userId&childId=$childId');
-      var response = await http.get(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token", // thêm token vào header
-        },
-      );
+      final uri = Uri.parse(
+          '$_baseUrl/GetDangerZoneByUserIdAndChildId?userId=$userId&childId=$childId');
+
+      final response = await ApiHelper.sendRequest("GET", uri);
+
       final jsonData = jsonDecode(response.body);
       final value = DangerZoneResponse.fromJson(jsonData);
+
       if (response.statusCode == 200) {
         return value;
       } else {
@@ -37,30 +34,28 @@ class DangerZoneService{
     } catch (e) {
       return DangerZoneResponse(
         status: false,
-        msg: 'Không thể kết nối server.',
+        msg: 'Không thể kết nối server: $e',
         data: [],
       );
     }
   }
 
-  /// Tạo vùng nguy hiểm
+  /// 🔹 Tạo vùng nguy hiểm
   static Future<DangerZoneResponse> createDangerZone(
     CreateDangerZoneRequest request,
-    String token,
   ) async {
     try {
-      var uri = Uri.parse('$_baseUrl/CreateDangerZone'); // endpoint POST
-      var response = await http.post(
+      final uri = Uri.parse('$_baseUrl/CreateDangerZone');
+
+      final response = await ApiHelper.sendRequest(
+        "POST",
         uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(request.toJson()), // gửi body dạng JSON
+        body: jsonEncode(request.toJson()),
       );
 
       final jsonData = jsonDecode(response.body);
       final value = DangerZoneResponse.fromJson(jsonData);
+
       if (response.statusCode == 200) {
         return value;
       } else {
@@ -73,30 +68,28 @@ class DangerZoneService{
     } catch (e) {
       return DangerZoneResponse(
         status: false,
-        msg: 'Không thể kết nối server.',
+        msg: 'Không thể kết nối server: $e',
         data: [],
       );
     }
   }
 
-  /// update vùng nguy hiểm
+  /// 🔹 Cập nhật vùng nguy hiểm
   static Future<DangerZoneResponse> updateDangerZone(
     UpdateDangerZoneRequest request,
-    String token,
   ) async {
     try {
-      var uri = Uri.parse('$_baseUrl/UpdateDangerZone'); // endpoint POST
-      var response = await http.put(
+      final uri = Uri.parse('$_baseUrl/UpdateDangerZone');
+
+      final response = await ApiHelper.sendRequest(
+        "PUT",
         uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(request.toJson()), // gửi body dạng JSON
+        body: jsonEncode(request.toJson()),
       );
 
       final jsonData = jsonDecode(response.body);
       final value = DangerZoneResponse.fromJson(jsonData);
+
       if (response.statusCode == 200) {
         return value;
       } else {
@@ -109,27 +102,18 @@ class DangerZoneService{
     } catch (e) {
       return DangerZoneResponse(
         status: false,
-        msg: 'Không thể kết nối server.',
+        msg: 'Không thể kết nối server: $e',
         data: [],
       );
     }
   }
 
-  /// Xóa vùng nguy hiểm
-  static Future<DangerZoneResponse> deleteDangerZone(
-    String dangerZoneId,
-    String token,
-  ) async {
+  /// 🔹 Xóa vùng nguy hiểm
+  static Future<DangerZoneResponse> deleteDangerZone(String dangerZoneId) async {
     try {
       final uri = Uri.parse('$_baseUrl/DeleteDangerZone?dangerZoneId=$dangerZoneId');
 
-      final response = await http.delete(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await ApiHelper.sendRequest("DELETE", uri);
 
       final jsonData = jsonDecode(response.body);
 
@@ -138,7 +122,7 @@ class DangerZoneService{
       } else {
         return DangerZoneResponse(
           status: false,
-          msg: jsonData['msg'] ?? 'Xóa vùng an toàn thất bại',
+          msg: jsonData['msg'] ?? 'Xóa vùng nguy hiểm thất bại',
           data: [],
         );
       }

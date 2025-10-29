@@ -29,7 +29,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
     final userId = JwtHelper.getUserId(token);
 
     setState(() {
-      _futureChildren = ChildService.getChildrenByUserId(userId!, token);
+      _futureChildren = ChildService.getChildrenByUserId(userId!);
     });
   }
 
@@ -60,15 +60,13 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundImage:
-                            (child.anhDaiDien.isNotEmpty &&
-                                child.anhDaiDien != null)
+                            (child.anhDaiDien.isNotEmpty)
                             ? NetworkImage(
                                 "${Config_URL.urlServer}${child.anhDaiDien}",
                               )
                             : null,
                         child:
-                            (child.anhDaiDien.isEmpty ||
-                                child.anhDaiDien == null)
+                            (child.anhDaiDien.isEmpty)
                             ? Text(
                                 child.hoTen.isNotEmpty ? child.hoTen : "?",
                               )

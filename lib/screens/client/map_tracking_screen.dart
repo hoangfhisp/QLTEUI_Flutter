@@ -49,7 +49,6 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> {
     final safeRes = await SafeZoneService.getSafeZoneByUserIdAndChildId(
       userId!,
       widget.childId,
-      token,
     );
     if (safeRes.status) _safeZones = safeRes.data;
 
@@ -57,14 +56,12 @@ class _MapTrackingScreenState extends State<MapTrackingScreen> {
     final dangerRes = await DangerZoneService.getDangerZoneByUserIdAndChildId(
       userId,
       widget.childId,
-      token,
     );
     if (dangerRes.status) _dangerZones = dangerRes.data;
 
     // Load vị trí mới nhất
     final locRes = await LocationService.getLocationHistoryNewByChildId(
       widget.childId,
-      token,
     );
     if (locRes.status && locRes.data.isNotEmpty) {
       final latest = locRes.data.first;
