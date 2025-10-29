@@ -152,12 +152,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.deepOrange,
                     onTap: () => Navigator.pushNamed(context, '/restriction_parent'),
                   ),
-                  _buildFeatureCard(
-                    icon: Icons.settings,
-                    title: "Cài đặt tài khoản",
-                    color: Colors.indigo,
-                    onTap: () => Navigator.pushNamed(context, '/userinfo'),
-                  ),
                 ],
               ),
             ),

@@ -148,12 +148,14 @@ class _SettingScreenState extends State<SettingScreen> {
   Widget build(BuildContext context) {
     final String? avatar = _controller.avatar;
     final isParent = _controller.role?.toLowerCase() == 'parent';
+    final isAdmin = _controller.role?.toLowerCase() == 'admin';
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         title: const Text('Cài đặt'),
         centerTitle: true,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -204,7 +206,7 @@ class _SettingScreenState extends State<SettingScreen> {
               ),
 
               const SizedBox(height: 40),
-              if(isParent)
+              if(isParent || isAdmin)
               // 🔹 Nút cập nhật thông tin
               SizedBox(
                 width: double.infinity,
