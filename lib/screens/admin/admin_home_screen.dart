@@ -169,6 +169,20 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       });
                     },
                   ),
+                  _buildFeatureCard(
+                    icon: Icons.info_outline,
+                    title: "Quản lý refresh token",
+                    color: Colors.redAccent,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/admin_refresh_token'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.info_outline,
+                    title: "Thông tin cá nhân",
+                    color: Colors.lightBlueAccent,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/userinfo'),
+                  ),
                 ],
               ),
             ),
