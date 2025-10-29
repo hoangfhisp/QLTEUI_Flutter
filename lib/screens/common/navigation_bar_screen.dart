@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend_qlte/screens/client/child/children_list_screen.dart';
 import 'package:frontend_qlte/screens/client/home_screen.dart';
 import 'package:frontend_qlte/screens/client/message/message_screen.dart';
+import 'package:frontend_qlte/screens/client/setting_screen.dart';
 import 'package:frontend_qlte/services/child_service.dart';
 import 'package:frontend_qlte/services/signalr_service.dart';
 import 'package:frontend_qlte/utils/jwt_helper.dart';
@@ -37,7 +38,7 @@ class _NavigationBarScreenState extends State<NavigationBarScreen> {
         child: const MessageScreen(),
       ),
       const Center(
-        child: Text('Trang Cài Đặt (Demo)', style: TextStyle(fontSize: 20)),
+        child: const SettingScreen(),
       ),
     ];
     _initSignalRGroup();

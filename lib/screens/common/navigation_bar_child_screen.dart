@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/screens/client/message/message_screen.dart';
 import 'package:frontend_qlte/screens/client/child/home_children_screen.dart';
+import 'package:frontend_qlte/screens/client/setting_screen.dart';
 import 'package:frontend_qlte/services/auth.dart';
 import 'package:frontend_qlte/services/location_auto_sender.dart';
 import 'package:frontend_qlte/services/signalr_service.dart';
@@ -58,7 +59,7 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
         child: const MessageScreen(),
       ),
       const Center(
-        child: Text('⚙️ Cài đặt tài khoản', style: TextStyle(fontSize: 18)),
+        child: const SettingScreen(),
       ),
     ];
   }
