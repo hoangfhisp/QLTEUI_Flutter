@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/user_info_model.dart';
+import '../../models/user_response_model.dart';
 import '../../services/user_service.dart';
-import '../../config/config_url.dart';
 
 class AdminUserScreen extends StatefulWidget {
   const AdminUserScreen({super.key});
@@ -14,8 +14,9 @@ class AdminUserScreen extends StatefulWidget {
 }
 
 class _AdminUserScreenState extends State<AdminUserScreen> {
-  late Future<List<UserInfoModel>> _futureUsers;
   String? _token;
+  bool _isLoading = false;
+  List<UserResponseModel> _users = [];
 
   @override
   void initState() {
@@ -23,34 +24,38 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
     _loadUsers();
   }
 
+  /// 🟢 Lấy danh sách Parent (lọc role)
   Future<void> _loadUsers() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString("jwt_token");
     if (_token == null) return;
+
+    setState(() => _isLoading = true);
+
+    final users = await UserService.getAllUsers(token: _token!);
+
+    // 🔹 Lọc chỉ những user có role là User hoặc Parent
     setState(() {
-      _futureUsers = UserService.getAllUsers(token: _token!);
+      _users = users
+          .where((u) =>
+      u.role.toLowerCase() == "user" || u.role.toLowerCase() == "parent")
+          .toList();
+      _isLoading = false;
     });
   }
 
-  /// 🧩 Hiển thị ảnh đại diện
-  String _buildAvatarUrl(String? avatarND) {
-    if (avatarND == null || avatarND.isEmpty) {
-      return "https://placehold.co/100x100?text=User";
+  /// 🧩 Xây URL ảnh đại diện từ .env
+  String _buildAvatarUrl(String? avatar) {
+    final baseUrl = dotenv.env['URL_SERVER'] ?? '';
+    if (avatar == null || avatar.isEmpty) {
+      return "${baseUrl}assets/default_avatar.png";
     }
-
-    // Nếu backend trả về full URL thì giữ nguyên
-    if (avatarND.startsWith("http")) return avatarND;
-
-    // Nếu trả về tương đối, ghép domain backend
-    final base = Config_URL.baseUrl.replaceFirst("/api/", "");
-    final fixedUrl = "$base$avatarND".replaceAll("//uploads", "/uploads");
-
-    print("🖼️ [AdminUserScreen] Avatar URL: $fixedUrl");
-    return fixedUrl;
+    if (avatar.startsWith("http")) return avatar;
+    return "$baseUrl${avatar.startsWith('/') ? avatar.substring(1) : avatar}";
   }
 
-  /// 🧩 Xem chi tiết User
-  void _showUserDetail(UserInfoModel user) {
+  /// 👁️ Hiển thị chi tiết User
+  void _showUserDetail(UserResponseModel user) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -60,34 +65,57 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              backgroundImage: NetworkImage(_buildAvatarUrl(user.avatarND)),
               radius: 40,
+              backgroundImage: (user.avatarND.isNotEmpty)
+                  ? NetworkImage(_buildAvatarUrl(user.avatarND))
+                  : const AssetImage("assets/default_avatar.png")
+              as ImageProvider,
             ),
             const SizedBox(height: 10),
-            Text("🆔 ID: ${user.id}"),
-            Text("📧 Email: ${user.email ?? 'Chưa có'}"),
-            Text("👤 Tên: ${user.nameND ?? '(Trống)'}"),
-            Text("📱 SĐT: ${user.phoneNumber ?? '(Trống)'}"),
-            Text("🚻 Giới tính: ${user.gioiTinh == 1 ? 'Nam' : user.gioiTinh == 0 ? 'Nữ' : 'Khác'}"),
-            Text("🕓 Tạo: ${user.thoiGianTao?.toLocal() ?? '-'}"),
-            if (user.moTa?.isNotEmpty == true)
-              Text("💬 Mô tả: ${user.moTa}"),
-            Text("🎭 Roles: ${user.roles.join(', ')}"),
+            Text("🆔 ID: ${user.userId}"),
+            Text("👤 Họ tên: ${user.nameND}"),
+            Text("📧 Email: ${user.email}"),
+            Text("📱 SĐT: ${user.phoneNumber}"),
+            Text("🚻 Giới tính: ${_getGenderName(user.gioiTinh)}"),
+            Text("🎭 Quyền: ${user.role}"),
+            Text("🔑 Loại đăng nhập: ${user.typeLogin}"),
+            Text("🕓 Tạo: ${_formatDate(user.thoiGianTao)}"),
+            Text("🕓 Cập nhật: ${_formatDate(user.thoiGianCapNhat)}"),
+            if (user.mota != null && user.mota!.isNotEmpty)
+              Text("💬 Mô tả: ${user.mota}"),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Đóng")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Đóng"),
+          ),
         ],
       ),
     );
   }
 
-  /// ✏️ Cập nhật thông tin người dùng
-  Future<void> _showEditUserDialog(UserInfoModel user) async {
-    final nameController = TextEditingController(text: user.nameND ?? "");
-    final phoneController = TextEditingController(text: user.phoneNumber ?? "");
-    final descController = TextEditingController(text: user.moTa ?? "");
-    int? gioiTinh = user.gioiTinh;
+  String _getGenderName(int? value) {
+    switch (value) {
+      case 1:
+        return "Nam";
+      case 0:
+        return "Nữ";
+      default:
+        return "Khác";
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
+  }
+
+  /// ✏️ Cập nhật người dùng
+  Future<void> _showEditDialog(UserResponseModel user) async {
+    final nameCtrl = TextEditingController(text: user.nameND);
+    final phoneCtrl = TextEditingController(text: user.phoneNumber);
+    final motaCtrl = TextEditingController(text: user.mota ?? "");
+    int gioiTinh = user.gioiTinh;
     File? selectedAvatar;
 
     await showDialog(
@@ -100,7 +128,8 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
               children: [
                 GestureDetector(
                   onTap: () async {
-                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+                    final picked =
+                    await ImagePicker().pickImage(source: ImageSource.gallery);
                     if (picked != null) {
                       setStateDialog(() => selectedAvatar = File(picked.path));
                     }
@@ -109,21 +138,26 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                     radius: 45,
                     backgroundImage: selectedAvatar != null
                         ? FileImage(selectedAvatar!)
-                        : NetworkImage(_buildAvatarUrl(user.avatarND)) as ImageProvider,
+                        : (user.avatarND.isNotEmpty)
+                        ? NetworkImage(_buildAvatarUrl(user.avatarND))
+                        : const AssetImage("assets/default_avatar.png")
+                    as ImageProvider,
                     child: const Align(
                       alignment: Alignment.bottomRight,
-                      child: Icon(Icons.camera_alt, size: 22, color: Colors.white),
+                      child:
+                      Icon(Icons.camera_alt, size: 22, color: Colors.white),
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: "Tên người dùng"),
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: "Họ tên"),
                 ),
                 TextField(
-                  controller: phoneController,
+                  controller: phoneCtrl,
                   decoration: const InputDecoration(labelText: "Số điện thoại"),
+                  keyboardType: TextInputType.phone,
                 ),
                 DropdownButtonFormField<int>(
                   value: gioiTinh,
@@ -133,10 +167,10 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                     DropdownMenuItem(value: 0, child: Text("Nữ")),
                     DropdownMenuItem(value: 2, child: Text("Khác")),
                   ],
-                  onChanged: (v) => setStateDialog(() => gioiTinh = v),
+                  onChanged: (v) => setStateDialog(() => gioiTinh = v ?? 2),
                 ),
                 TextField(
-                  controller: descController,
+                  controller: motaCtrl,
                   decoration: const InputDecoration(labelText: "Mô tả"),
                   maxLines: 2,
                 ),
@@ -144,31 +178,30 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Hủy")),
             ElevatedButton(
               onPressed: () async {
-                if (_token == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("❌ Phiên đăng nhập đã hết.")),
-                  );
-                  return;
-                }
+                if (_token == null) return;
 
                 final result = await UserService.updateInfoUser(
-                  userId: user.id,
-                  userName: user.userName ?? "",
-                  nameND: nameController.text.trim(),
-                  gioiTinh: gioiTinh,
-                  moTa: descController.text.trim(),
-                  phoneNumber: phoneController.text.trim(),
-                  avatarPath: selectedAvatar?.path,
                   token: _token!,
+                  userId: user.userId,
+                  userName: user.userName, // 🟢 backend bắt buộc
+                  nameND: nameCtrl.text.trim(),
+                  phoneNumber: phoneCtrl.text.trim(),
+                  gioiTinh: gioiTinh,
+                  moTa: motaCtrl.text.trim(),
+                  avatarPath: selectedAvatar?.path,
                 );
 
                 if (mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result["message"] ?? "Đã cập nhật")),
+                    SnackBar(
+                        content: Text(
+                            result["message"] ?? "Cập nhật thành công")),
                   );
                   _loadUsers();
                 }
@@ -181,29 +214,31 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
     );
   }
 
-  /// 🗑️ Xóa user
-  Future<void> _deleteUser(UserInfoModel user) async {
-    if (_token == null) return;
+  /// 🗑️ Xóa người dùng
+  Future<void> _deleteUser(UserResponseModel user) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Xóa người dùng"),
-        content: Text("Bạn có chắc muốn xóa ${user.nameND ?? 'người dùng này'}?"),
+        content: Text("Bạn có chắc muốn xóa ${user.nameND}?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Hủy")),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("Xóa")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Hủy")),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Xóa")),
         ],
       ),
     );
 
-    if (confirm == true) {
-      final result = await UserService.deleteUser(userId: user.id, token: _token!);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result["message"] ?? "Đã xóa")),
-        );
-        _loadUsers();
-      }
+    if (confirm == true && _token != null) {
+      final result =
+      await UserService.deleteUser(userId: user.userId, token: _token!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result["message"] ?? "Đã xóa")),
+      );
+      _loadUsers();
     }
   }
 
@@ -211,67 +246,64 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("👥 Quản lý người dùng"),
+        title: const Text("👥 Quản lý phụ huynh (Parent)"),
         backgroundColor: Colors.indigo,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadUsers),
+        ],
       ),
-      body: FutureBuilder<List<UserInfoModel>>(
-        future: _futureUsers,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text("❌ Lỗi: ${snapshot.error}"));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Chưa có người dùng nào."));
-          }
-
-          final users = snapshot.data!;
-          return RefreshIndicator(
-            onRefresh: _loadUsers,
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: users.length,
-              itemBuilder: (context, index) {
-                final user = users[index];
-                return Card(
-                  elevation: 3,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: NetworkImage(_buildAvatarUrl(user.avatarND)),
-                      radius: 25,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _users.isEmpty
+          ? const Center(child: Text("Chưa có người dùng nào."))
+          : RefreshIndicator(
+        onRefresh: _loadUsers,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: _users.length,
+          itemBuilder: (context, index) {
+            final u = _users[index];
+            return Card(
+              elevation: 3,
+              margin:
+              const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 25,
+                  backgroundImage: (u.avatarND.isNotEmpty)
+                      ? NetworkImage(_buildAvatarUrl(u.avatarND))
+                      : const AssetImage("assets/default_avatar.png")
+                  as ImageProvider,
+                ),
+                title: Text(u.nameND,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold)),
+                subtitle: Text(
+                    "📧 ${u.email}\n📱 ${u.phoneNumber}\n🎭 ${u.role}"),
+                trailing: Wrap(
+                  spacing: 6,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.visibility,
+                          color: Colors.blue),
+                      onPressed: () => _showUserDetail(u),
                     ),
-                    title: Text(user.nameND ?? "Không rõ"),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Email: ${user.email ?? 'Không có'}"),
-                        Text("Vai trò: ${user.roles.join(', ')}"),
-                      ],
+                    IconButton(
+                      icon: const Icon(Icons.edit,
+                          color: Colors.orange),
+                      onPressed: () => _showEditDialog(u),
                     ),
-                    trailing: Wrap(
-                      spacing: 6,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.visibility, color: Colors.blue),
-                          onPressed: () => _showUserDetail(user),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.orange),
-                          onPressed: () => _showEditUserDialog(user),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteUser(user),
-                        ),
-                      ],
+                    IconButton(
+                      icon: const Icon(Icons.delete,
+                          color: Colors.red),
+                      onPressed: () => _deleteUser(u),
                     ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

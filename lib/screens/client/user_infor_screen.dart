@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/config_url.dart';
@@ -162,8 +163,9 @@ class _UserInforScreenState extends State<UserInforScreen> {
                           radius: 60,
                           backgroundImage: _selectedImage != null
                               ? FileImage(_selectedImage!)
-                              : NetworkImage(
-                              _buildAvatarUrl(user.avatarND)) as ImageProvider,
+                              : (user.avatarND?.isNotEmpty ?? false)
+                              ? NetworkImage("${dotenv.env['URL_SERVER']}${user.avatarND}")
+                              : const AssetImage("assets/default_avatar.png") as ImageProvider,
                         ),
                         IconButton(
                           icon: const Icon(Icons.camera_alt),

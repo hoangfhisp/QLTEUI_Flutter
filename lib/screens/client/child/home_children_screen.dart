@@ -186,13 +186,6 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
                 mainAxisSpacing: 16,
                 children: [
                   _buildFeatureCard(
-                    icon: Icons.school,
-                    title: "Lịch học hôm nay",
-                    color: Colors.indigoAccent,
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/studyperiod'),
-                  ),
-                  _buildFeatureCard(
                     icon: Icons.event_note,
                     title: "Lịch thời khoá biểu",
                     color: Colors.purpleAccent,
@@ -205,28 +198,6 @@ class _HomeChildrenScreenState extends State<HomeChildrenScreen> {
                     color: Colors.orangeAccent,
                     onTap: () => Navigator.pushNamed(
                         context, '/exam_schedule_children'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.health_and_safety,
-                    title: "Theo dõi sức khỏe",
-                    color: Colors.teal,
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text("Thông báo"),
-                          content: const Text(
-                              "⚙️ Tính năng 'Theo dõi sức khỏe' hiện chưa có.\nChúng tôi đang phát triển thêm!"),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(context),
-                              child: const Text("Đã hiểu"),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
                   ),
                   _buildFeatureCard(
                     icon: Icons.info_outline,

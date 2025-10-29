@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/config_url.dart';
 import '../../models/child_response_model.dart';
 import '../../services/child_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ChildrenManagerScreen extends StatefulWidget {
   const ChildrenManagerScreen({super.key});
@@ -36,7 +37,7 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
     });
   }
 
-  /// 🧩 Build avatar URL (xử lý tương đối)
+  /// Build avatar URL (xử lý tương đối)
   String _buildAvatarUrl(String? avatarND) {
     if (avatarND == null || avatarND.isEmpty) {
       return "https://placehold.co/100x100?text=Child";
@@ -46,14 +47,19 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
     return "$base$avatarND".replaceAll("//uploads", "/uploads");
   }
 
-  /// ✏️ Thêm hoặc cập nhật trẻ
+  /// Thêm hoặc cập nhật trẻ
   Future<void> _showChildDialog({Child? child}) async {
     final nameCtrl = TextEditingController(text: child?.hoTen ?? "");
-    final phoneCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController(text: child?.phoneNumber ?? "");
     final passCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
     DateTime? birthDate = child?.ngaySinh;
-    int gioiTinh = child?.gioiTinh == "Nam" ? 1 : child?.gioiTinh == "Nữ" ? 0 : 2;
+    int gioiTinh = child?.gioiTinh == "Nam"
+        ? 1
+        : child?.gioiTinh == "Nữ"
+        ? 0
+        : 2;
     File? selectedAvatar;
 
     await showDialog(
@@ -64,28 +70,38 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
           content: SingleChildScrollView(
             child: Column(
               children: [
+                // Avatar chọn ảnh
                 GestureDetector(
                   onTap: () async {
-                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-                    if (picked != null) setStateDialog(() => selectedAvatar = File(picked.path));
+                    final picked =
+                    await ImagePicker().pickImage(source: ImageSource.gallery);
+                    if (picked != null) {
+                      setStateDialog(() => selectedAvatar = File(picked.path));
+                    }
                   },
                   child: CircleAvatar(
                     radius: 45,
                     backgroundImage: selectedAvatar != null
                         ? FileImage(selectedAvatar!)
-                        : NetworkImage(_buildAvatarUrl(child?.anhDaiDien)) as ImageProvider,
+                        : NetworkImage(_buildAvatarUrl(child?.anhDaiDien))
+                    as ImageProvider,
                     child: const Align(
                       alignment: Alignment.bottomRight,
-                      child: Icon(Icons.camera_alt, size: 22, color: Colors.white),
+                      child: Icon(Icons.camera_alt,
+                          size: 22, color: Colors.white),
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                // Họ tên
                 TextField(
                   controller: nameCtrl,
                   decoration: const InputDecoration(labelText: "Họ tên trẻ"),
                 ),
                 const SizedBox(height: 8),
+
+                // Giới tính
                 DropdownButtonFormField<int>(
                   value: gioiTinh,
                   decoration: const InputDecoration(labelText: "Giới tính"),
@@ -97,10 +113,12 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
                   onChanged: (v) => setStateDialog(() => gioiTinh = v!),
                 ),
                 const SizedBox(height: 8),
+
+                // Ngày sinh
                 ListTile(
-                  title: Text(birthDate == null
-                      ? "Chọn ngày sinh"
-                      : "Ngày sinh: ${birthDate != null ? birthDate!.toLocal().toString().split(' ')[0] : 'Chưa chọn'}"),
+                  title: Text(
+                    "Ngày sinh: ${birthDate?.toLocal().toString().split(' ')[0] ?? 'Chưa chọn'}",
+                  ),
                   trailing: const Icon(Icons.calendar_month),
                   onTap: () async {
                     final date = await showDatePicker(
@@ -112,46 +130,81 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
                     if (date != null) setStateDialog(() => birthDate = date);
                   },
                 ),
+
+                // Các field chỉ hiển thị khi thêm mới
                 if (child == null) ...[
                   const SizedBox(height: 8),
-                  TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: "Số điện thoại")),
-                  TextField(controller: passCtrl, decoration: const InputDecoration(labelText: "Mật khẩu")),
-                  TextField(controller: confirmCtrl, decoration: const InputDecoration(labelText: "Xác nhận mật khẩu")),
+                  // Số điện thoại (hiển thị cả khi cập nhật)
+                  TextField(
+                    controller: phoneCtrl,
+                    decoration: const InputDecoration(labelText: "Số điện thoại"),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  TextField(
+                    controller: emailCtrl,
+                    decoration: const InputDecoration(labelText: "Email trẻ"),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  TextField(
+                    controller: passCtrl,
+                    decoration: const InputDecoration(labelText: "Mật khẩu"),
+                    obscureText: true,
+                  ),
+                  TextField(
+                    controller: confirmCtrl,
+                    decoration:
+                    const InputDecoration(labelText: "Xác nhận mật khẩu"),
+                    obscureText: true,
+                  ),
                 ],
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Hủy")),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Hủy"),
+            ),
             ElevatedButton(
               onPressed: () async {
                 if (_token == null || _userId == null) return;
 
                 if (child == null) {
-                  // 🟢 Tạo mới
+                  // Tạo mới (POST /CreateChild)
                   final fields = {
                     "ParentId": _userId!,
                     "FullName": nameCtrl.text.trim(),
                     "GioiTinh": gioiTinh.toString(),
                     "NgaySinh": birthDate?.toIso8601String() ?? "",
-                    "Email": "${DateTime.now().millisecondsSinceEpoch}@child.com",
+                    "Email": emailCtrl.text.trim(),
                     "PhoneNumber": phoneCtrl.text.trim(),
                     "Password": passCtrl.text.trim(),
                     "ConfirmPassword": confirmCtrl.text.trim(),
                   };
-                  final res = await ChildService.createChild(fields, _token!);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res["message"])));
+
+                  // Gửi kèm ảnh nếu có
+                  final res = await ChildService.createChild(fields, _token!,
+                      avatar: selectedAvatar);
+
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(res["message"] ?? "Tạo trẻ thành công")));
                 } else {
-                  // 🟠 Cập nhật
+                  // Cập nhật (PUT /UpdateChild)
                   final fields = {
                     "ChildrenId": child.childId,
                     "NameND": nameCtrl.text.trim(),
                     "GioiTinh": gioiTinh.toString(),
                     "NgaySinh": birthDate?.toIso8601String() ?? "",
                     "TrangThai": child.trangThai,
+                    "UserName": (child.userName
+                        ?.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '') ??
+                        child.childId.replaceAll('-', ''))
+                        .substring(0, 12),
                   };
+
                   final res = await ChildService.updateChild(fields, _token!);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res["message"])));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(res["message"] ?? "Cập nhật thành công")));
                 }
 
                 Navigator.pop(context);
@@ -165,7 +218,7 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
     );
   }
 
-  /// 🗑️ Xóa trẻ
+  /// 🗑Xóa trẻ
   Future<void> _deleteChild(Child child) async {
     if (_token == null) return;
     final confirm = await showDialog<bool>(
@@ -191,7 +244,7 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("👧 Quản lý trẻ em"),
+        title: const Text("Quản lý trẻ em"),
         backgroundColor: Colors.indigo,
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: () => _showChildDialog()),
@@ -220,8 +273,10 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: NetworkImage(_buildAvatarUrl(c.anhDaiDien)),
                       radius: 30,
+                      backgroundImage: c.anhDaiDien.isNotEmpty
+                          ? NetworkImage("${dotenv.env['URL_SERVER']}${c.anhDaiDien}")
+                          : const AssetImage("assets/default_avatar.png") as ImageProvider,
                     ),
                     title: Text(c.hoTen),
                     subtitle: Text("👶 ${c.nhomTuoi} | 🚻 ${c.gioiTinh}"),

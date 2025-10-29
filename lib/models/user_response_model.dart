@@ -29,18 +29,18 @@ class UserResponseModel {
 
   factory UserResponseModel.fromJson(Map<String, dynamic> json) {
     return UserResponseModel(
-      userId: json['userId'] as String,
-      userName: json['userName'] as String,
-      email: json['email'] as String,
-      phoneNumber: json['phoneNumber'] as String,
-      nameND: json['nameND'] as String,
-      gioiTinh: json['gioiTinh'] as int,
-      mota: json['mota'] as String?,
-      avatarND: json['avatarND'] as String,
-      typeLogin: json['typeLogin'] as String,
-      role: json['role'] as String,
-      thoiGianCapNhat: DateTime.parse(json['thoiGianCapNhat'] as String),
-      thoiGianTao: DateTime.parse(json['thoiGianTao'] as String),
+      userId: (json['userId'] ?? '').toString(),
+      userName: (json['userName'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      phoneNumber: (json['phoneNumber'] ?? '').toString(),
+      nameND: (json['nameND'] ?? 'Không rõ').toString(),
+      gioiTinh: json['gioiTinh'] is int ? json['gioiTinh'] : 2,
+      mota: json['mota']?.toString(),
+      avatarND: (json['avatarND'] ?? '').toString(),
+      typeLogin: (json['typeLogin'] ?? 'Local').toString(),
+      role: (json['role'] ?? 'User').toString(),
+      thoiGianCapNhat: DateTime.tryParse(json['thoiGianCapNhat'] ?? '') ?? DateTime.now(),
+      thoiGianTao: DateTime.tryParse(json['thoiGianTao'] ?? '') ?? DateTime.now(),
     );
   }
 

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:frontend_qlte/config/config_url.dart';
 import '../models/user_info_model.dart';
+import '../models/user_response_model.dart';
 
 class UserService {
   static final String _baseUrl = "${Config_URL.baseUrl}User/";
@@ -124,7 +125,7 @@ class UserService {
   }
 
   /// 🟢 Lấy danh sách người dùng (Admin)
-  static Future<List<UserInfoModel>> getAllUsers({
+  static Future<List<UserResponseModel>> getAllUsers({
     int page = 1,
     int limit = 10,
     required String token,
@@ -141,7 +142,7 @@ class UserService {
 
       if (jsonData["status"] == true && jsonData["data"] != null) {
         final List<dynamic> dataList = jsonData["data"];
-        return dataList.map((e) => UserInfoModel.fromJson(e)).toList();
+        return dataList.map((e) => UserResponseModel.fromJson(e)).toList();
       } else {
         return [];
       }

@@ -59,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.lightBlue.shade50,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text("👨‍👩‍👧 KidGuardian - Trang Phụ huynh"),
         backgroundColor: Colors.indigoAccent,
         actions: [
@@ -142,20 +143,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildFeatureCard(
                     icon: Icons.phone_android_rounded,
                     title: "Thông tin máy của trẻ em",
-                    color: Colors.indigoAccent,
+                    color: Colors.orangeAccent,
                     onTap: () => Navigator.pushNamed(context, '/device_info_child'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.security_rounded,
                     title: "Quản lý hạn chế cho thiết bị",
-                    color: Colors.deepPurpleAccent,
+                    color: Colors.deepOrange,
                     onTap: () => Navigator.pushNamed(context, '/restriction_parent'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.location_on,
-                    title: "Định vị trẻ",
-                    color: Colors.orangeAccent,
-                    onTap: () => Navigator.pushNamed(context, '/tracking'),
                   ),
                   _buildFeatureCard(
                     icon: Icons.settings,

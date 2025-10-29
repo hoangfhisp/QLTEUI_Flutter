@@ -240,6 +240,7 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
       children: [
         Scaffold(
           appBar: AppBar(
+            automaticallyImplyLeading: false,
             title: const Text('🧒 KidGuardian - Trẻ em'),
             backgroundColor: Colors.teal,
             actions: [
