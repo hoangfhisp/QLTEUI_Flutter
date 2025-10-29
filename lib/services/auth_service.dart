@@ -9,6 +9,7 @@ import 'package:frontend_qlte/utils/api_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/config_url.dart';
+import '../models/refresh_token_info_model.dart';
 import '../utils/jwt_helper.dart';
 import '../utils/http_response_helper.dart';
 import 'package:frontend_qlte/services/child_service.dart';
@@ -344,6 +345,73 @@ class AuthService {
       return ApiResponseModel(
         status: false,
         msg: 'Không thể kết nối server.',
+      );
+    }
+  }
+
+  /// Thu hồi refresh token (dành cho Admin)
+  static Future<ApiResponseModel> RevokeToken(String refreshToken) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/RevokeToken'); // endpoint POST
+      final body = jsonEncode({
+        "refreshToken": refreshToken,
+      });
+
+      final response = await ApiHelper.sendRequest(
+        "POST",
+        uri,
+        body: body,
+      );
+
+      final jsonData = jsonDecode(response.body);
+      final value = ApiResponseModel.fromJson(jsonData);
+
+      if (response.statusCode == 200) {
+        return value;
+      } else {
+        return ApiResponseModel(
+          status: false,
+          msg: 'Lỗi: ${value.msg}',
+        );
+      }
+    } catch (e) {
+      return ApiResponseModel(
+        status: false,
+        msg: 'Không thể kết nối server.',
+      );
+    }
+  }
+
+  /// 🟢 Lấy danh sách RefreshToken (Admin only)
+  static Future<RefreshTokenResponse> getAllRefreshTokens({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      // ✅ Đổi lại cho đúng route backend
+      final uri = Uri.parse('${Config_URL.baseUrl}Auth/GetAll?page=$page&limit=$limit');
+
+      final response = await ApiHelper.sendRequest("GET", uri);
+
+      print("📡 Status Code: ${response.statusCode}");
+      print("📥 Response body: ${response.body}");
+
+      if (response.statusCode != 200 || response.body.isEmpty) {
+        return RefreshTokenResponse(
+          status: false,
+          msg: 'Server không trả về dữ liệu hợp lệ.',
+          data: [],
+        );
+      }
+
+      final jsonData = jsonDecode(response.body);
+      return RefreshTokenResponse.fromJson(jsonData);
+    } catch (e) {
+      print("❌ Lỗi khi gọi API GetAllRefreshTokens: $e");
+      return RefreshTokenResponse(
+        status: false,
+        msg: 'Không thể tải danh sách RefreshToken.',
+        data: [],
       );
     }
   }

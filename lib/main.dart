@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_qlte/screens/admin/admin_children_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_parent_children_screen.dart';
+import 'package:frontend_qlte/screens/admin/admin_refresh_token_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_user_screen.dart';
 import 'package:frontend_qlte/screens/admin/admin_screen.dart';
 import 'package:frontend_qlte/screens/auth/login_screen.dart';
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
         '/schedule_parent': (context) => const ScheduleParentScreen(),
         '/userinfo': (context) => const UserInforScreen(),
         '/child_manager': (context) => const ChildrenManagerScreen(),
+        '/admin_refresh_token': (context) => const AdminRefreshTokenScreen(),
       },
 
       // 🧩 Các route động (có arguments)
