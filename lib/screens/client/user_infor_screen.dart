@@ -1,10 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/config_url.dart';
-import '../../models/user_info_model.dart';
+import 'package:frontend_qlte/models/user_response_model.dart';
 import '../../services/user_service.dart';
 
 class UserInforScreen extends StatefulWidget {
@@ -17,7 +16,7 @@ class UserInforScreen extends StatefulWidget {
 class _UserInforScreenState extends State<UserInforScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  Future<UserInfoModel?>? _futureUser;
+  Future<UserResponseModel?>? _futureUser;
   String? _token;
   String? _userId;
   String? _userName;
@@ -112,7 +111,7 @@ class _UserInforScreenState extends State<UserInforScreen> {
       appBar: AppBar(title: const Text("Thông tin người dùng")),
       body: _futureUser == null
           ? const Center(child: CircularProgressIndicator())
-          : FutureBuilder<UserInfoModel?>(
+          : FutureBuilder<UserResponseModel?>(
         future: _futureUser!,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -142,10 +141,10 @@ class _UserInforScreenState extends State<UserInforScreen> {
           }
 
           final user = snapshot.data!;
-          _userName = user.userName;
-          _nameController.text = user.nameND ?? "";
-          _moTaController.text = user.moTa ?? "";
-          _phoneController.text = user.phoneNumber ?? "";
+          _userName = user.userName; // ✅ Lưu username để gửi lại khi update
+          _nameController.text = user.nameND ;
+          _moTaController.text = user.mota ?? "";
+          _phoneController.text = user.phoneNumber ;
           _gioiTinh ??= user.gioiTinh;
 
           return SingleChildScrollView(
@@ -163,9 +162,11 @@ class _UserInforScreenState extends State<UserInforScreen> {
                           radius: 60,
                           backgroundImage: _selectedImage != null
                               ? FileImage(_selectedImage!)
-                              : (user.avatarND?.isNotEmpty ?? false)
-                              ? NetworkImage("${dotenv.env['URL_SERVER']}${user.avatarND}")
-                              : const AssetImage("assets/default_avatar.png") as ImageProvider,
+                              : (user.avatarND.isNotEmpty
+                              ? NetworkImage(user.avatarND)
+                              : const AssetImage(
+                              "assets/avatar_placeholder.png"))
+                          as ImageProvider
                         ),
                         IconButton(
                           icon: const Icon(Icons.camera_alt),

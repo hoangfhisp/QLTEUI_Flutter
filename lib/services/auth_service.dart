@@ -1,4 +1,11 @@
 import 'dart:convert';
+import 'package:frontend_qlte/models/auth/external_provider_login_user_token_request_model.dart';
+import 'package:frontend_qlte/models/auth/forgot_password_request_model.dart';
+import 'package:frontend_qlte/models/auth/reset_password_request_model.dart';
+import 'package:frontend_qlte/models/auth/verify_forgot_password_request_model.dart';
+import 'package:frontend_qlte/models/common/api_response_model.dart';
+import 'package:frontend_qlte/models/token_response_model.dart';
+import 'package:frontend_qlte/utils/api_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/config_url.dart';
@@ -8,6 +15,7 @@ import 'package:frontend_qlte/services/child_service.dart';
 
 class AuthService {
   String get apiUrl => "${Config_URL.baseUrl}Auth/LoginUserToken";
+  static final String _baseUrl = '${Config_URL.baseUrl}Auth';
 
   Future<Map<String, dynamic>> login(String account, String password) async {
     try {
@@ -101,7 +109,7 @@ class AuthService {
       else if (role == "Parent") {
         try {
           print("👨‍👧 Bắt đầu tải danh sách con cho Parent userId=$userId ...");
-          final childrenResponse = await ChildService.getChildrenByUserId(userId, token);
+          final childrenResponse = await ChildService.getChildrenByUserId(userId);
 
           if (childrenResponse.status && childrenResponse.data.isNotEmpty) {
             final firstChild = childrenResponse.data.first;
@@ -149,6 +157,194 @@ class AuthService {
     } catch (e) {
       print("❌ Lỗi khi gọi API lấy childId: $e");
       return null;
+    }
+  }
+
+  static Future<TokenResponse> RefreshToken(
+    String refreshToken,
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/RefreshToken'); // endpoint POST
+      final body = jsonEncode({"refreshToken" : refreshToken});
+      final response = await http.post(
+        uri,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: body, // gửi body dạng JSON
+      );
+
+      final jsonData = jsonDecode(response.body);
+      final value = TokenResponse.fromJson(jsonData);
+      if (response.statusCode == 200) {
+        return value;
+      } else {
+        return TokenResponse(
+          status: false,
+          msg: 'Lỗi: ${value.msg}',
+          data: null,
+        );
+      }
+    } catch (e) {
+      return TokenResponse(
+        status: false,
+        msg: 'Không thể kết nối server.',
+        data: null,
+      );
+    }
+  }
+
+  static Future<TokenResponse> UserLogOut(
+    String refreshToken,
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/UserLogOut'); // endpoint POST
+      final body = jsonEncode({"refreshToken" : refreshToken});
+      final response = await ApiHelper.sendRequest(
+        "POST",
+        uri,
+        body: body, // gửi body dạng JSON
+      );
+
+      final jsonData = jsonDecode(response.body);
+      final value = TokenResponse.fromJson(jsonData);
+      if (response.statusCode == 200) {
+        return value;
+      } else {
+        return TokenResponse(
+          status: false,
+          msg: 'Lỗi: ${value.msg}',
+          data: null,
+        );
+      }
+    } catch (e) {
+      return TokenResponse(
+        status: false,
+        msg: 'Không thể kết nối server.',
+        data: null,
+      );
+    }
+  }
+
+  static Future<TokenResponse> ExternalProviderLoginUserToken(
+    ExternalProviderLoginUserRequestTokenModel request
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/ExternalProviderLoginUserToken'); // endpoint POST
+      final body = jsonEncode(request.toJson());
+      final response = await ApiHelper.sendRequest(
+        "POST",
+        uri,
+        body: body, // gửi body dạng JSON
+      );
+
+      final jsonData = jsonDecode(response.body);
+      final value = TokenResponse.fromJson(jsonData);
+      if (response.statusCode == 200) {
+        return value;
+      } else {
+        return TokenResponse(
+          status: false,
+          msg: 'Lỗi: ${value.msg}',
+          data: null,
+        );
+      }
+    } catch (e) {
+      return TokenResponse(
+        status: false,
+        msg: 'Không thể kết nối server.',
+        data: null,
+      );
+    }
+  }
+  
+  static Future<ApiResponseModel> ForgotPassword(
+    ForgotPasswordRequestModel request
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/ForgotPassword'); // endpoint POST
+      final body = jsonEncode(request.toJson());
+      final response = await ApiHelper.sendRequest(
+        "POST",
+        uri,
+        body: body, // gửi body dạng JSON
+      );
+
+      final jsonData = jsonDecode(response.body);
+      final value = ApiResponseModel.fromJson(jsonData);
+      if (response.statusCode == 200) {
+        return value;
+      } else {
+        return ApiResponseModel(
+          status: false,
+          msg: 'Lỗi: ${value.msg}',
+        );
+      }
+    } catch (e) {
+      return ApiResponseModel(
+        status: false,
+        msg: 'Không thể kết nối server.',
+      );
+    }
+  }
+
+  static Future<ApiResponseModel> VerifyForgotPassword(
+    VerifyForgotPasswordRequestModel request
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/VerifyForgotPassword'); // endpoint POST
+      final body = jsonEncode(request.toJson());
+      final response = await ApiHelper.sendRequest(
+        "POST",
+        uri,
+        body: body, // gửi body dạng JSON
+      );
+
+      final jsonData = jsonDecode(response.body);
+      final value = ApiResponseModel.fromJson(jsonData);
+      if (response.statusCode == 200) {
+        return value;
+      } else {
+        return ApiResponseModel(
+          status: false,
+          msg: 'Lỗi: ${value.msg}',
+        );
+      }
+    } catch (e) {
+      return ApiResponseModel(
+        status: false,
+        msg: 'Không thể kết nối server.',
+      );
+    }
+  }
+
+  static Future<ApiResponseModel> ResetPassword(
+    ResetPasswordRequestModel request
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/ResetPassword'); // endpoint POST
+      final body = jsonEncode(request.toJson());
+      final response = await ApiHelper.sendRequest(
+        "POST",
+        uri,
+        body: body, // gửi body dạng JSON
+      );
+
+      final jsonData = jsonDecode(response.body);
+      final value = ApiResponseModel.fromJson(jsonData);
+      if (response.statusCode == 200) {
+        return value;
+      } else {
+        return ApiResponseModel(
+          status: false,
+          msg: 'Lỗi: ${value.msg}',
+        );
+      }
+    } catch (e) {
+      return ApiResponseModel(
+        status: false,
+        msg: 'Không thể kết nối server.',
+      );
     }
   }
 }

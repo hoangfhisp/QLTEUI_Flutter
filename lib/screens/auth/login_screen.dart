@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_qlte/config/config_url.dart';
+import 'package:frontend_qlte/models/auth/external_provider_login_user_token_request_model.dart';
+import 'package:frontend_qlte/screens/auth/forgot_password_screen.dart';
 import 'package:frontend_qlte/services/auth.dart';
+import 'package:frontend_qlte/services/auth_service.dart';
+import 'package:frontend_qlte/utils/jwt_helper.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +21,51 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkToken(); // 🔹 kiểm tra token khi mở app
+  }
+
+  // 🔹 Hàm check token
+  Future<void> _checkToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("jwt_token");
+
+    if (token != null && token.isNotEmpty) {
+      if (JwtHelper.isTokenExpired(token)) {
+        await prefs.remove('jwt_token');
+        final rf = prefs.getString("refresh_token")!;
+        print('rf: $rf');
+        if (rf.isEmpty) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+        final refreshToken = await AuthService.RefreshToken(rf);
+        if (refreshToken.status && refreshToken.data != null) {
+          print(
+            "Lấy token từ refreshToken ${refreshToken.data!.token} thành công",
+          );
+          await prefs.setString("jwt_token", refreshToken.data!.token);
+        } else {
+          await prefs.remove('refresh_token');
+          print(
+            "Lấy token từ refreshToken không thành công : ${refreshToken.msg}",
+          );
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      }
+
+      final role = JwtHelper.getRole(token);
+      if (role == "Admin") {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else if (role == "Parent") {
+        Navigator.pushReplacementNamed(context, '/navigationbar');
+      } else {
+        Navigator.pushReplacementNamed(context, '/navigationbarchild');
+      }
+    }
+  }
 
   Future<void> _handleLogin() async {
     final account = _accountController.text.trim();
@@ -33,48 +84,26 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 🔹 Gọi API đăng nhập
       final result = await Auth.login(account, password);
-
       if (!mounted) return;
 
       if (result["success"] == true) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("jwt_token", result["token"]);
-
+        String token = await prefs.getString("jwt_token")!;
         // ✅ Giải mã token
-        final decoded = result["decodedToken"];
-        final role = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-        final email = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+        if (token.isEmpty) {
+          await prefs.remove('jwt_token');
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+        final role = JwtHelper.getRole(token);
+        final email = JwtHelper.getEmail(token);
 
         // 🎉 Hiển thị thông báo chào mừng
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Xin chào $email — Vai trò: $role")),
         );
 
-        // 🧒 Nếu là tài khoản trẻ em → đợi đến khi có child_id
-        if (role == "Children") {
-          String? childId;
-          for (int i = 0; i < 5; i++) {
-            // đợi child_id từ AuthService (đã gọi API GetChildByUserId)
-            childId = prefs.getString("child_id");
-            if (childId != null && childId.isNotEmpty) break;
-            await Future.delayed(const Duration(milliseconds: 500));
-          }
-
-          if (childId == null || childId.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("⚠️ Không thể lấy thông tin Child. Vui lòng thử lại."),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-            setState(() => _isLoading = false);
-            return;
-          }
-
-          print("✅ Child ID loaded: $childId");
-        }
-
-        // ✅ Điều hướng theo vai trò
+        // Điều hướng theo role
         if (role == "Admin") {
           Navigator.pushReplacementNamed(context, '/admin');
         } else if (role == "Parent") {
@@ -86,7 +115,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         // ⚠️ Nếu API trả về lỗi (status=false)
-        final msg = result["message"] ?? result["msg"] ?? "Đăng nhập thất bại, vui lòng thử lại.";
+        final msg =
+            result["message"] ??
+            result["msg"] ??
+            "Đăng nhập thất bại, vui lòng thử lại.";
         setState(() => _errorMessage = msg);
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -110,6 +142,97 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // 1️⃣ Khởi tạo GoogleSignIn
+      final GoogleSignIn signIn = GoogleSignIn.instance;
+
+      await signIn.initialize(
+        clientId: Config_URL.clientIdGoogle,
+        serverClientId: Config_URL.serverClientIdGoogle,
+      );
+
+      // 2️⃣ Thực hiện đăng nhập
+      final GoogleSignInAccount? googleUser = await signIn.authenticate();
+
+      if (googleUser == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Đăng nhập Google bị hủy.";
+        });
+        return;
+      }
+
+      // 3️⃣ Lấy token
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final String? idToken = googleAuth.idToken;
+      if (idToken == null) {
+        throw Exception("Không lấy được Google ID Token");
+      }
+
+      print("🟢 Google ID Token: $idToken");
+
+      // 4️⃣ Gọi API backend của bạn
+      final request = ExternalProviderLoginUserRequestTokenModel(
+        provider: "Google",
+        idToken: idToken,
+      );
+
+      final response = await AuthService.ExternalProviderLoginUserToken(
+        request,
+      );
+
+      if (response.status && response.data != null) {
+        // ✅ Lưu token
+        final prefs = await SharedPreferences.getInstance();
+        final token = await prefs.setString("jwt_token", response.data!.token);
+        final rf = await prefs.setString(
+          "refresh_token",
+          response.data!.refreshToken!,
+        );
+        print("Token provider: $token, rf: $rf");
+        final role = JwtHelper.getRole(response.data!.token);
+        final email = JwtHelper.getEmail(response.data!.token);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Xin chào $email — Vai trò: $role")),
+        );
+
+        if (role == "Admin") {
+          Navigator.pushReplacementNamed(context, '/admin');
+        } else if (role == "Parent") {
+          Navigator.pushReplacementNamed(context, '/navigationbar');
+        } else {
+          Navigator.pushReplacementNamed(context, '/navigationbarchild');
+        }
+      } else {
+        throw Exception(response.msg);
+      }
+    } catch (e) {
+      print("❌ Lỗi Google Login: $e");
+      setState(() {
+        _errorMessage = "Đăng nhập Google thất bại: $e";
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Đăng nhập Google thất bại: $e"),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -196,16 +319,42 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                    "Đăng nhập",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                          "Đăng nhập",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // 🔹 Nút đăng nhập bằng Google
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  icon: Image.asset(
+                    'assets/icons/google_logo.png',
+                    height: 24,
+                    width: 24,
+                  ),
+                  label: const Text(
+                    "Đăng nhập bằng Google",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Colors.grey),
                     ),
                   ),
+                  onPressed: _isLoading ? null : _handleGoogleLogin,
                 ),
               ),
               const SizedBox(height: 20),
-
               // 🔹 Nút đăng ký
               TextButton(
                 onPressed: () {
@@ -222,7 +371,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // 🔹 Nút quên mật khẩu
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ForgotPasswordScreen(),
+                    ),
+                  );
+                },
                 child: Text(
                   "Quên mật khẩu?",
                   style: TextStyle(color: themeColor),

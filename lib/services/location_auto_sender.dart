@@ -17,11 +17,18 @@ class LocationAutoSender {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
+
     if (permission == LocationPermission.deniedForever) {
-      throw Exception("Quyền truy cập vị trí bị từ chối vĩnh viễn.");
+      await Geolocator.openAppSettings();
+      throw Exception(
+        "Quyền truy cập vị trí bị từ chối vĩnh viễn. Vui lòng bật lại trong cài đặt ứng dụng.",
+      );
     }
 
-    // 2️ Kiểm tra GPS bật chưa
+    if (permission == LocationPermission.denied) {
+      throw Exception("Quyền truy cập vị trí bị từ chối.");
+    }
+
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       await Geolocator.openLocationSettings();
@@ -32,19 +39,22 @@ class LocationAutoSender {
     await _signalRService.connect();
 
     // 4 Theo dõi vị trí và gửi liên tục
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // chỉ gửi khi di chuyển trên 10m
-      ),
-    ).listen((position) async {
-      await _signalRService.sendLocation(
-        childId,
-        position.latitude,
-        position.longitude,
-      );
-      print("📡 Vị trí cập nhật: ${position.latitude}, ${position.longitude}");
-    });
+    _positionStream =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10, // chỉ gửi khi di chuyển trên 10m
+          ),
+        ).listen((position) async {
+          await _signalRService.sendLocation(
+            childId,
+            position.latitude,
+            position.longitude,
+          );
+          print(
+            "📡 Vị trí cập nhật: ${position.latitude}, ${position.longitude}",
+          );
+        });
   }
 
   /// Dừng gửi vị trí

@@ -28,21 +28,25 @@ class UserResponseModel {
   });
 
   factory UserResponseModel.fromJson(Map<String, dynamic> json) {
-    return UserResponseModel(
-      userId: (json['userId'] ?? '').toString(),
-      userName: (json['userName'] ?? '').toString(),
-      email: (json['email'] ?? '').toString(),
-      phoneNumber: (json['phoneNumber'] ?? '').toString(),
-      nameND: (json['nameND'] ?? 'Không rõ').toString(),
-      gioiTinh: json['gioiTinh'] is int ? json['gioiTinh'] : 2,
-      mota: json['mota']?.toString(),
-      avatarND: (json['avatarND'] ?? '').toString(),
-      typeLogin: (json['typeLogin'] ?? 'Local').toString(),
-      role: (json['role'] ?? 'User').toString(),
-      thoiGianCapNhat: DateTime.tryParse(json['thoiGianCapNhat'] ?? '') ?? DateTime.now(),
-      thoiGianTao: DateTime.tryParse(json['thoiGianTao'] ?? '') ?? DateTime.now(),
-    );
-  }
+  return UserResponseModel(
+    userId: json['userId'] ?? '',
+    userName: json['userName'] ?? '',
+    email: json['email'] ?? '',
+    phoneNumber: json['phoneNumber'] ?? '',
+    nameND: json['nameND'] ?? '',
+    gioiTinh: json['gioiTinh'] ?? 0,
+    mota: json['mota'] != null ? json['mota'] as String : null,
+    avatarND: json['avatarND'] ?? '',
+    typeLogin: json['typeLogin'] ?? '',
+    role: json['role'] ?? '',
+    thoiGianCapNhat: json['thoiGianCapNhat'] != null
+        ? DateTime.parse(json['thoiGianCapNhat'])
+        : DateTime.now(),
+    thoiGianTao: json['thoiGianTao'] != null
+        ? DateTime.parse(json['thoiGianTao'])
+        : DateTime.now(),
+  );
+}
 
   Map<String, dynamic> toJson() {
     return {

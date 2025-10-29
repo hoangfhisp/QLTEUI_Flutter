@@ -29,7 +29,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
     final userId = JwtHelper.getUserId(token);
 
     setState(() {
-      _futureChildren = ChildService.getChildrenByUserId(userId!, token);
+      _futureChildren = ChildService.getChildrenByUserId(userId!);
     });
   }
 
@@ -51,27 +51,24 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                 }
 
                 final children = snapshot.data!.data;
-
+                
                 return ListView.builder(
                   itemCount: children.length,
                   itemBuilder: (context, index) {
                     final child = children[index];
                     final inSafeZone = child.trangThai.toLowerCase() == "true";
-
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundImage:
-                            (child.anhDaiDien.isNotEmpty &&
-                                child.anhDaiDien[0] != null)
+                            (child.anhDaiDien.isNotEmpty)
                             ? NetworkImage(
-                                "${Config_URL.urlServer}${child.anhDaiDien[0]}",
+                                "${Config_URL.urlServer}${child.anhDaiDien}",
                               )
                             : null,
                         child:
-                            (child.anhDaiDien.isEmpty ||
-                                child.anhDaiDien[0] == null)
+                            (child.anhDaiDien.isEmpty)
                             ? Text(
-                                child.hoTen.isNotEmpty ? child.hoTen[0] : "?",
+                                child.hoTen.isNotEmpty ? child.hoTen : "?",
                               )
                             : null,
                       ),

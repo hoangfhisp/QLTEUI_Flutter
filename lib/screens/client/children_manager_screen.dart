@@ -33,7 +33,7 @@ class _ChildrenManagerScreenState extends State<ChildrenManagerScreen> {
     if (_token == null || _userId == null) return;
 
     setState(() {
-      _futureChildren = ChildService.getChildrenByUserId(_userId!, _token!);
+      _futureChildren = ChildService.getChildrenByUserId(_userId!);
     });
   }
 

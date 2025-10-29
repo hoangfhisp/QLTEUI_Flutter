@@ -52,7 +52,7 @@ class _ScheduleParentScreenState extends State<ScheduleParentScreen> {
       return;
     }
 
-    final response = await ChildService.getChildrenByUserId(userId, _token!);
+    final response = await ChildService.getChildrenByUserId(userId);
 
     if (response.status == true) {
       setState(() {

@@ -37,7 +37,7 @@ class _AdminParentChildrenScreenState
   Future<void> _loadChildren() async {
     setState(() => _isLoading = true);
     final res =
-    await ChildService.getChildrenByUserId(widget.parentId, widget.token);
+    await ChildService.getChildrenByUserId(widget.parentId);
     setState(() {
       _children = res.data;
       _isLoading = false;

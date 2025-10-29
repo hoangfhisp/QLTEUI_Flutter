@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:frontend_qlte/screens/client/message/message_screen.dart';
 import 'package:frontend_qlte/screens/client/child/home_children_screen.dart';
+import 'package:frontend_qlte/screens/client/setting_screen.dart';
+import 'package:frontend_qlte/services/auth.dart';
 import 'package:frontend_qlte/services/location_auto_sender.dart';
 import 'package:frontend_qlte/services/signalr_service.dart';
 import 'package:frontend_qlte/services/device_info_service.dart';
 import 'package:frontend_qlte/services/study_period_service.dart'; // 🟢 thêm dòng này
 import 'package:frontend_qlte/utils/jwt_helper.dart';
 import 'package:frontend_qlte/models/study_period_model.dart'; // 🟢 dùng để parse model
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
 import 'package:flutter/services.dart';
@@ -59,9 +63,14 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
 
     _widgetOptions = <Widget>[
       const HomeChildrenScreen(),
-      const Center(child: Text('📍 Theo dõi vị trí', style: TextStyle(fontSize: 18))),
-      const Center(child: Text('💬 Tin nhắn với phụ huynh', style: TextStyle(fontSize: 18))),
-      const Center(child: Text('⚙️ Cài đặt tài khoản', style: TextStyle(fontSize: 18))),
+      const Center(child: Text('Trang Vị trí (Tự động gửi)', style: TextStyle(fontSize: 20))),
+      ChangeNotifierProvider(
+        create: (_) => MessageController(),
+        child: const MessageScreen(),
+      ),
+      const Center(
+        child: const SettingScreen(),
+      ),
     ];
   }
 
@@ -107,7 +116,9 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
       // 🔒 DeviceHub: khoá thiết bị
       _signalRService.onDeviceLocked((data) async {
         setState(() => _isLocked = true);
-        if (await Vibration.hasVibrator() ?? false) {
+
+        // rung nhẹ khi bị khoá
+        if (await Vibration.hasVibrator()) {
           Vibration.vibrate(pattern: [0, 400, 150, 400]);
         }
       });
@@ -249,15 +260,27 @@ class _NavigationBarChildScreenState extends State<NavigationBarChildScreen>
                 icon: const Icon(Icons.logout),
                 onPressed: () async {
                   final prefs = await SharedPreferences.getInstance();
-                  await prefs.remove('jwt_token');
-                  await prefs.remove('device_id');
-                  await prefs.remove('child_id');
+                  
+                  final refreshToken = prefs.getString("refresh_token")!;
 
-                  if (!context.mounted) return;
-                  Navigator.pushReplacementNamed(context, '/login');
+                  final logout = await Auth.logout(refreshToken);
+                  if(logout){
+                    if (!context.mounted) return;
+                    Navigator.pushReplacementNamed(context, '/login');
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Đã đăng xuất thành công."),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Đã đăng xuất thành công.")),
-                  );
+                      const SnackBar(
+                        content: Text("Đã đăng xuất thất bại."),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
                 },
               ),
             ],

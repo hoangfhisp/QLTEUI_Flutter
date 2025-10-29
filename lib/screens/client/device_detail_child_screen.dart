@@ -91,13 +91,13 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
   Future<void> _toggleTracking() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    if (token == null || widget.device.childId == null) return;
+    if (token == null || widget.device.childId.isEmpty) return;
 
     setState(() => _loading = true);
 
     try {
       final result = await DeviceInfoService.setTracking(
-        widget.device.childId!,
+        widget.device.childId,
         !_isTracking,
         token,
       );
@@ -131,14 +131,14 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
   Future<void> _toggleLock() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    if (token == null || widget.device.childId == null) return;
+    if (token == null || widget.device.childId.isEmpty) return;
 
     setState(() => _loading = true);
 
     try {
       final result = _isLocked
-          ? await DeviceInfoService.unlockDevice(widget.device.childId!, token)
-          : await DeviceInfoService.lockDevice(widget.device.childId!, token);
+          ? await DeviceInfoService.unlockDevice(widget.device.childId, token)
+          : await DeviceInfoService.lockDevice(widget.device.childId, token);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -168,7 +168,7 @@ class _DeviceDetailChildScreenState extends State<DeviceDetailChildScreen> {
       try {
         final randomPin = 60 + Random().nextInt(40); // 60–99%
         await DeviceInfoService.updateStatus(
-          deviceId: widget.device.deviceId ?? "",
+          deviceId: widget.device.deviceId ,
           pin: randomPin,
           online: true,
         );

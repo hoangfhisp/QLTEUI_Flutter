@@ -2,39 +2,35 @@ import 'dart:convert';
 
 import 'package:frontend_qlte/config/config_url.dart';
 import 'package:frontend_qlte/models/location_history_response_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:frontend_qlte/utils/api_helper.dart';
 
 class LocationService {
   static final String _baseUrl = '${Config_URL.baseUrl}Location';
 
-  static Future<LocationHistoryResponseModel> getChildrenByUserId(
+  static Future<LocationHistoryResponseModel> getLocationHistoryNewByChildId(
     String childId,
-    String token,
   ) async {
     try {
-      var uri = Uri.parse('$_baseUrl/GetLocationHistoryNew?childId=$childId');
-      var response = await http.get(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token", // thêm token vào header
-        },
-      );
+      final uri = Uri.parse('$_baseUrl/GetLocationHistoryNew?childId=$childId');
+
+      // 👇 Gọi API thông qua ApiHelper (đồng bộ hoàn toàn)
+      final response = await ApiHelper.sendRequest('GET', uri);
+
       final jsonData = jsonDecode(response.body);
-      final value = LocationHistoryResponseModel.fromJson(jsonData);
+
       if (response.statusCode == 200) {
-        return value;
+        return LocationHistoryResponseModel.fromJson(jsonData);
       } else {
         return LocationHistoryResponseModel(
           status: false,
-          msg: 'Lỗi: ${value.msg}',
+          msg: jsonData['msg'] ?? 'Lỗi: ${response.statusCode}',
           data: [],
         );
       }
     } catch (e) {
       return LocationHistoryResponseModel(
         status: false,
-        msg: 'Không thể kết nối server.',
+        msg: 'Không thể kết nối server: $e',
         data: [],
       );
     }
