@@ -33,4 +33,34 @@ class Config_URL {
     print("✅ BASE_URL Loaded once: $url");
     return url;
   })();
+
+  // 🔑 Google Client ID (dành cho ứng dụng Android / iOS)
+  static final String clientIdGoogle = (() {
+    String? id = dotenv.env['CLIENT_ID_GOOGLE'];
+
+    if (id == null || id.isEmpty) {
+      print(
+        "⚠️ CLIENT_ID_GOOGLE is not set in the .env file. Using default ID.",
+      );
+      id ="645483323057-a6ghml2q50j81q3n63ovgadm8u96m5k8.apps.googleusercontent.com";
+    }
+
+    print("✅ CLIENT_ID_GOOGLE Loaded once: $id");
+    return id;
+  })();
+
+  // 🖥️ Google Server Client ID (dành cho backend verification)
+  static final String serverClientIdGoogle = (() {
+    String? id = dotenv.env['SERVER_CLIENT_ID_GOOGLE'];
+
+    if (id == null || id.isEmpty) {
+      print(
+        "⚠️ SERVER_CLIENT_ID_GOOGLE is not set in the .env file. Using default ID.",
+      );
+      id ="645483323057-c6q3bkj13crooeo2mdofa271shf2h17s.apps.googleusercontent.com";
+    }
+
+    print("✅ SERVER_CLIENT_ID_GOOGLE Loaded once: $id");
+    return id;
+  })();
 }

@@ -47,14 +47,12 @@ class _ZoneParentManagementScreenState
       final res = await SafeZoneService.getSafeZoneByUserIdAndChildId(
         userId!,
         widget.childId,
-        token,
       );
       if (res.status) _zones = res.data;
     } else {
       final res = await DangerZoneService.getDangerZoneByUserIdAndChildId(
         userId!,
         widget.childId,
-        token,
       );
       if (res.status) _zones = res.data;
     }
@@ -90,17 +88,14 @@ class _ZoneParentManagementScreenState
     );
 
     if (confirm != true) return; // Người dùng bấm hủy
-
-    final token = await _getToken();
     bool success = false;
 
     if (widget.isSafeZone) {
-      final res = await SafeZoneService.deleteSafeZone(zone.safeZoneId, token);
+      final res = await SafeZoneService.deleteSafeZone(zone.safeZoneId);
       success = res.status;
     } else {
       final res = await DangerZoneService.deleteDangerZone(
         zone.dangerZoneId,
-        token,
       );
       success = res.status;
     }
@@ -127,7 +122,6 @@ class _ZoneParentManagementScreenState
     String name,
     String mota,
   ) async {
-    final token = await _getToken();
     bool success = false;
 
     if (widget.isSafeZone) {
@@ -139,7 +133,7 @@ class _ZoneParentManagementScreenState
         banKinh: radius,
       );
 
-      final res = await SafeZoneService.updateSafeZone(request, token);
+      final res = await SafeZoneService.updateSafeZone(request);
       success = res.status;
     } else {
       final request = UpdateDangerZoneRequest(
@@ -151,7 +145,7 @@ class _ZoneParentManagementScreenState
         moTa: mota,
       );
 
-      final res = await DangerZoneService.updateDangerZone(request, token);
+      final res = await DangerZoneService.updateDangerZone(request);
       success = res.status;
     }
     if (success) {
@@ -321,7 +315,7 @@ class _ZoneParentManagementScreenState
         kinhDo: lng,
         banKinh: radius,
       );
-      final res = await SafeZoneService.createSafeZone(request, token);
+      final res = await SafeZoneService.createSafeZone(request);
       success = res.status;
     } else {
       final request = CreateDangerZoneRequest(
@@ -333,7 +327,7 @@ class _ZoneParentManagementScreenState
         kinhDo: lng,
         banKinh: radius,
       );
-      final res = await DangerZoneService.createDangerZone(request, token);
+      final res = await DangerZoneService.createDangerZone(request);
       success = res.status;
     }
 

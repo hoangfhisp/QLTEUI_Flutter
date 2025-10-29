@@ -36,6 +36,7 @@ dependencies:
   permission_handler: ^12.0.1
   vibration: ^3.1.4
   audioplayers: ^6.5.1
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:
@@ -55,4 +56,5 @@ flutter:
   - assets/avatar_placeholder.png
   - assets/images/default_avatar.png
   - assets/sounds/sos_alarm.mp3
+  - assets/icons/google_logo.png
 

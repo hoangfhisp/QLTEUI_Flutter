@@ -56,7 +56,6 @@ class _NavigationBarScreenState extends State<NavigationBarScreen> {
       // 🔹 Lấy danh sách con của phụ huynh
       final childrenRes = await ChildService.getChildrenByUserId(
         userId!,
-        token,
       );
       if (childrenRes.status && childrenRes.data.isNotEmpty) {
         for (var child in childrenRes.data) {

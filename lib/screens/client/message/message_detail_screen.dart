@@ -7,7 +7,6 @@ import 'package:frontend_qlte/services/message_service.dart';
 import 'package:frontend_qlte/services/signalr_chat_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 /// -------------------- CONTROLLER --------------------
@@ -116,15 +115,11 @@ class MessageDetailController extends ChangeNotifier {
     }
     notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('jwt_token');
-
     final response = await MessageService.getHistory(
       currentUserId!,
       otherUserId!,
       currentPage,
       pageSize,
-      token!,
     );
 
     final messagesModel = response.messages;

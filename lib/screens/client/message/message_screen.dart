@@ -30,7 +30,7 @@ class MessageController extends ChangeNotifier {
     userId = JwtHelper.getUserId(token!);
     try {
       final response =
-          await MessageService.GetLastMessagePerUser(userId!, token!);
+          await MessageService.getLastMessagePerUser(userId!);
       if (response.status && response.data != null) {
         messages = response.data!;
         for (var msg in messages) {

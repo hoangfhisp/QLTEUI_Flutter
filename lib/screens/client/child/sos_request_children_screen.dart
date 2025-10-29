@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:frontend_qlte/services/sos_sender.dart'; // ✅ Dùng SOSSender mới
-import 'package:shared_preferences/shared_preferences.dart';
+
 
 class SOSRequestChildrenScreen extends StatefulWidget {
   const SOSRequestChildrenScreen({super.key});
@@ -57,7 +57,7 @@ class _SOSRequestChildrenScreenState extends State<SOSRequestChildrenScreen>
 
       if (result["success"] == true) {
         // 🔊 Rung và phát âm thanh
-        if (await Vibration.hasVibrator() ?? false) {
+        if (await Vibration.hasVibrator()) {
           Vibration.vibrate(duration: 1500);
         }
         await audioPlayer.play(AssetSource('sounds/sos_alarm.mp3'));

@@ -1,22 +1,17 @@
 import 'dart:convert';
 import 'package:frontend_qlte/config/config_url.dart';
 import 'package:frontend_qlte/models/child_response_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:frontend_qlte/utils/api_helper.dart';
 
 class ChildService {
   static final String _baseUrl = '${Config_URL.baseUrl}Child';
 
-  static Future<ChildrenResponse> getChildrenByUserId(String userId,String token) async {
+  static Future<ChildrenResponse> getChildrenByUserId(String userId) async {
     try {
+      final uri = Uri.parse('$_baseUrl/GetChildrenByUserId?userId=$userId');
 
-      var uri = Uri.parse('$_baseUrl/GetChildrenByUserId?userId=$userId');
-      var response = await http.get(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token", // thêm token vào header
-        },
-      );
+      // 👉 Gọi ApiHelper để tự động xử lý token & refresh nếu cần
+      final response = await ApiHelper.sendRequest("GET", uri);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -31,7 +26,7 @@ class ChildService {
     } catch (e) {
       return ChildrenResponse(
         status: false,
-        msg: 'Không thể kết nối server.',
+        msg: 'Không thể kết nối server: $e',
         data: [],
       );
     }

@@ -43,7 +43,7 @@ class _DeviceInfoChildScreenState extends State<DeviceInfoChildScreen> {
       return;
     }
 
-    final result = await ChildService.getChildrenByUserId(userId, token);
+    final result = await ChildService.getChildrenByUserId(userId);
     if (result.status && result.data.isNotEmpty) {
       setState(() {
         _children = result.data;
