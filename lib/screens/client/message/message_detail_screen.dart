@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:frontend_qlte/config/config_url.dart';
 import 'package:frontend_qlte/models/message/message_model.dart';
 import 'package:frontend_qlte/models/message/user_model.dart';
+import 'package:frontend_qlte/screens/client/message/call_screen.dart';
 import 'package:frontend_qlte/services/message_service.dart';
 import 'package:frontend_qlte/services/signalr_chat_service.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -322,6 +323,40 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
             Text(widget.otherUserName),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.videocam, color: Colors.white),
+            onPressed: () {
+              // Chuyển sang màn hình Video Call
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CallScreen(
+                    currentUserId: widget.currentUserId,
+                    otherUserId: widget.otherUserId,
+                    type: 'video', // video call
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.call, color: Colors.white),
+            onPressed: () {
+              // Chuyển sang màn hình Voice Call
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CallScreen(
+                    currentUserId: widget.currentUserId,
+                    otherUserId: widget.otherUserId,
+                    type: 'audio', // voice call
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

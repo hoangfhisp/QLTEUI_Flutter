@@ -28,21 +28,25 @@ class UserResponseModel {
   });
 
   factory UserResponseModel.fromJson(Map<String, dynamic> json) {
-    return UserResponseModel(
-      userId: json['userId'] as String,
-      userName: json['userName'] as String,
-      email: json['email'] as String,
-      phoneNumber: json['phoneNumber'] as String,
-      nameND: json['nameND'] as String,
-      gioiTinh: json['gioiTinh'] as int,
-      mota: json['mota'] as String?,
-      avatarND: json['avatarND'] as String,
-      typeLogin: json['typeLogin'] as String,
-      role: json['role'] as String,
-      thoiGianCapNhat: DateTime.parse(json['thoiGianCapNhat'] as String),
-      thoiGianTao: DateTime.parse(json['thoiGianTao'] as String),
-    );
-  }
+  return UserResponseModel(
+    userId: json['userId'] ?? '',
+    userName: json['userName'] ?? '',
+    email: json['email'] ?? '',
+    phoneNumber: json['phoneNumber'] ?? '',
+    nameND: json['nameND'] ?? '',
+    gioiTinh: json['gioiTinh'] ?? 0,
+    mota: json['mota'] != null ? json['mota'] as String : null,
+    avatarND: json['avatarND'] ?? '',
+    typeLogin: json['typeLogin'] ?? '',
+    role: json['role'] ?? '',
+    thoiGianCapNhat: json['thoiGianCapNhat'] != null
+        ? DateTime.parse(json['thoiGianCapNhat'])
+        : DateTime.now(),
+    thoiGianTao: json['thoiGianTao'] != null
+        ? DateTime.parse(json['thoiGianTao'])
+        : DateTime.now(),
+  );
+}
 
   Map<String, dynamic> toJson() {
     return {

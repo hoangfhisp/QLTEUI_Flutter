@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_qlte/config/config_url.dart';
 import 'package:frontend_qlte/models/auth/external_provider_login_user_token_request_model.dart';
-import 'package:frontend_qlte/models/auth/reset_password_request_model.dart';
 import 'package:frontend_qlte/screens/auth/forgot_password_screen.dart';
 import 'package:frontend_qlte/services/auth.dart';
 import 'package:frontend_qlte/services/auth_service.dart';

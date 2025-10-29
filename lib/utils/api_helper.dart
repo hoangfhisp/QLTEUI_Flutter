@@ -1,9 +1,9 @@
-
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend_qlte/utils/jwt_helper.dart';
 import 'package:frontend_qlte/services/auth_service.dart';
 import 'package:frontend_qlte/main.dart';
+
 class ApiHelper {
   static Future<http.Response> sendRequest(
     String method,
@@ -14,7 +14,7 @@ class ApiHelper {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString("jwt_token");
     String? refresh = prefs.getString("refresh_token");
-    
+
     // Nếu token hết hạn → refresh
     if (token != null && JwtHelper.isTokenExpired(token)) {
       print("⚠️ Token hết hạn, đang refresh...");
@@ -29,7 +29,10 @@ class ApiHelper {
         print("✅ Token mới đã được lưu");
       } else {
         await prefs.clear();
-        navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
         throw Exception(refreshResult.msg);
       }
     }
@@ -92,5 +95,31 @@ class ApiHelper {
     }
 
     return response;
+  }
+
+  static Future<String?> getValidToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString("jwt_token");
+    String? refresh = prefs.getString("refresh_token");
+
+    if (token != null && JwtHelper.isTokenExpired(token)) {
+      print("⚠️ Token hết hạn, đang refresh...");
+      if (refresh == null || refresh.isEmpty) return null;
+
+      final refreshResult = await AuthService.RefreshToken(refresh);
+      if (refreshResult.status && refreshResult.data != null) {
+        token = refreshResult.data!.token;
+        await prefs.setString("jwt_token", token);
+        print("✅ Token mới đã được lưu");
+      } else {
+        await prefs.clear();
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+        throw Exception(refreshResult.msg);
+      }
+    }
+    return token;
   }
 }
