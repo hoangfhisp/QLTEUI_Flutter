@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:frontend_qlte/models/user/update_user_info_request_model.dart';
+import 'package:frontend_qlte/models/user_response_model.dart';
+import 'package:frontend_qlte/utils/api_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend_qlte/config/config_url.dart';
 import '../models/user_info_model.dart';
@@ -48,10 +50,7 @@ class UserService {
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "account": account,
-        "password": password,
-      }),
+      body: jsonEncode({"account": account, "password": password}),
     );
 
     final result = jsonDecode(response.body);
@@ -64,7 +63,8 @@ class UserService {
 
   /// 🟢 Cập nhật thông tin người dùng
   static Future<Map<String, dynamic>> updateInfoUser({
-    required String userName, // ✅ bắt buộc
+    required String userId,   // 🟢 bắt buộc
+    required String userName, // 🟢 thêm mới
     String? nameND,
     int? gioiTinh,
     String? moTa,
@@ -77,7 +77,8 @@ class UserService {
     try {
       var request = http.MultipartRequest("PUT", url)
         ..headers["Authorization"] = "Bearer $token"
-        ..fields["UserName"] = userName;
+        ..fields["UserId"] = userId
+        ..fields["UserName"] = userName; // ✅ BẮT BUỘC backend cần
 
       if (nameND != null && nameND.isNotEmpty) {
         request.fields["NameND"] = nameND;
@@ -93,15 +94,14 @@ class UserService {
       }
 
       if (avatarPath != null && avatarPath.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath("AvatarND", avatarPath));
+        request.files.add(
+          await http.MultipartFile.fromPath("AvatarND", avatarPath),
+        );
       }
 
-      // 🔍 Ghi log để debug
       print("📤 Gửi request cập nhật:");
       print("  ➤ URL: $url");
-      print("  ➤ Header: Authorization = Bearer $token");
       print("  ➤ Fields: ${request.fields}");
-      if (avatarPath != null) print("  ➤ Có ảnh: $avatarPath");
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -125,7 +125,7 @@ class UserService {
   }
 
   /// 🟢 Lấy danh sách người dùng (Admin)
-  static Future<List<UserInfoModel>> getAllUsers({
+  static Future<List<UserResponseModel>> getAllUsers({
     int page = 1,
     int limit = 10,
     required String token,
@@ -142,7 +142,7 @@ class UserService {
 
       if (jsonData["status"] == true && jsonData["data"] != null) {
         final List<dynamic> dataList = jsonData["data"];
-        return dataList.map((e) => UserInfoModel.fromJson(e)).toList();
+        return dataList.map((e) => UserResponseModel.fromJson(e)).toList();
       } else {
         return [];
       }
@@ -166,14 +166,14 @@ class UserService {
   }
 
   /// 🟢 Lấy thông tin User theo UserId
-  static Future<UserInfoModel?> getUserByUserId(String userId) async {
+  static Future<UserResponseModel?> getUserByUserId(String userId) async {
     final url = Uri.parse("${_baseUrl}GetUserByUserId?UserId=$userId");
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final result = jsonDecode(response.body);
       if (result["status"] == true && result["data"] != null) {
-        return UserInfoModel.fromJson(result["data"]);
+        return UserResponseModel.fromJson(result["data"]);
       }
     }
     return null;
@@ -195,5 +195,76 @@ class UserService {
       "success": result["status"] ?? false,
       "message": result["msg"] ?? "Không thể xoá người dùng",
     };
+  }
+
+  static Future<UserResponseModel?> updateInfoUserAsync(
+  UpdateUserInfoRequestModel request,
+) async {
+  final uri = Uri.parse('${_baseUrl}UpdateInfoUser');
+
+  try {
+    final token = await ApiHelper.getValidToken();
+    if (token == null) throw Exception("Token không hợp lệ");
+
+    var multipart = http.MultipartRequest('PUT', uri);
+    multipart.headers['Authorization'] = 'Bearer $token';
+    multipart.headers['Accept'] = 'application/json';
+
+    // Bắt buộc không được rỗng
+    if (request.userId.isEmpty || request.nameND.isEmpty || request.userName.isEmpty) {
+      throw Exception("UserId, NameND và UserName không được rỗng");
+    }
+
+    multipart.fields['UserId'] = request.userId;
+    multipart.fields['NameND'] = request.nameND;
+    multipart.fields['UserName'] = request.userName;
+    multipart.fields['PhoneNumber'] = request.phoneNumber;
+    multipart.fields['GioiTinh'] = (request.gioiTinh ?? 0).toString();
+    multipart.fields['MoTa'] = request.moTa ?? '';
+
+    // Nếu có ảnh mới attach, nếu không gửi rỗng
+    if (request.avatarND != null && request.avatarND!.isNotEmpty) {
+      multipart.files.add(
+        await http.MultipartFile.fromPath('AvatarND', request.avatarND!),
+      );
+    } else {
+      // gửi một file rỗng hoặc bỏ field tuỳ server
+      multipart.fields['AvatarND'] = '';
+    }
+
+    final streamedResponse = await multipart.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final jsonRes = jsonDecode(response.body);
+      return UserResponseModel.fromJson(jsonRes["data"]);
+    } else {
+      print('❌ Lỗi server: ${response.statusCode} - ${response.body}');
+      return null;
+    }
+  } catch (e) {
+    print('❌ Exception updateInfoUserAsync: $e');
+    return null;
+  }
+}
+
+
+  static Future<UserResponseModel?> getUserByUserIdAsync(String userId) async {
+    final url = Uri.parse("${_baseUrl}GetUserByUserId?UserId=$userId");
+
+    try {
+      final response = await ApiHelper.sendRequest("GET", url);
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        if (result["status"] == true && result["data"] != null) {
+          return UserResponseModel.fromJson(result["data"]);
+        }
+      } else {
+        print("⚠️ Lỗi khi lấy user: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      print("❌ Exception khi lấy user: $e");
+    }
   }
 }

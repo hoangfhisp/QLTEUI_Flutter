@@ -29,6 +29,15 @@ dependencies:
   google_maps_flutter: ^2.13.1
   geolocator: ^14.0.2
   geocoding: ^4.0.0
+  latlong2: ^0.9.1
+  flutter_map: ^8.2.2
+  provider: ^6.1.5+1
+  speech_to_text: ^7.3.0
+  permission_handler: ^12.0.1
+  vibration: ^3.1.4
+  audioplayers: ^6.5.1
+  google_sign_in: ^7.2.0
+  flutter_webrtc: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -46,4 +55,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   - .env
   - assets/avatar_placeholder.png
+  - assets/images/default_avatar.png
+  - assets/sounds/sos_alarm.mp3
+  - assets/icons/google_logo.png
 

@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/user_info_model.dart';
+import '../../config/config_url.dart';
+import 'package:frontend_qlte/models/user_response_model.dart';
 import '../../services/user_service.dart';
 
 class UserInforScreen extends StatefulWidget {
@@ -15,10 +16,10 @@ class UserInforScreen extends StatefulWidget {
 class _UserInforScreenState extends State<UserInforScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  Future<UserInfoModel?>? _futureUser;
+  Future<UserResponseModel?>? _futureUser;
   String? _token;
   String? _userId;
-  String? _userName; // ✅ Lưu username ẩn để gửi lại khi update
+  String? _userName;
 
   final _nameController = TextEditingController();
   final _moTaController = TextEditingController();
@@ -52,8 +53,23 @@ class _UserInforScreenState extends State<UserInforScreen> {
     if (picked != null) setState(() => _selectedImage = File(picked.path));
   }
 
+  /// ✅ Fix lỗi ảnh — ghép domain nếu chỉ là đường dẫn tương đối
+  String _buildAvatarUrl(String? avatarND) {
+    if (avatarND == null || avatarND.isEmpty) {
+      return "https://placehold.co/150x150?text=User";
+    }
+
+    // Nếu backend trả về full URL thì giữ nguyên
+    if (avatarND.startsWith("http")) return avatarND;
+
+    // Nếu trả về tương đối, ghép domain backend
+    final base = Config_URL.baseUrl.replaceFirst("/api/", "");
+    print("🖼️ Avatar URL được build: $base$avatarND");
+    return "$base$avatarND".replaceAll("//uploads", "/uploads");
+  }
+
   Future<void> _updateUser() async {
-    if (_token == null || _userName == null) {
+    if (_token == null || _userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Vui lòng đăng nhập lại.")),
       );
@@ -68,7 +84,8 @@ class _UserInforScreenState extends State<UserInforScreen> {
     }
 
     final result = await UserService.updateInfoUser(
-      userName: _userName!, // ✅ gửi lại username cũ
+      userId: _userId!,
+      userName: _userName ?? "",
       nameND: _nameController.text.trim(),
       moTa: _moTaController.text.trim(),
       gioiTinh: _gioiTinh,
@@ -94,7 +111,7 @@ class _UserInforScreenState extends State<UserInforScreen> {
       appBar: AppBar(title: const Text("Thông tin người dùng")),
       body: _futureUser == null
           ? const Center(child: CircularProgressIndicator())
-          : FutureBuilder<UserInfoModel?>(
+          : FutureBuilder<UserResponseModel?>(
         future: _futureUser!,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -125,9 +142,9 @@ class _UserInforScreenState extends State<UserInforScreen> {
 
           final user = snapshot.data!;
           _userName = user.userName; // ✅ Lưu username để gửi lại khi update
-          _nameController.text = user.nameND ?? "";
-          _moTaController.text = user.moTa ?? "";
-          _phoneController.text = user.phoneNumber ?? "";
+          _nameController.text = user.nameND ;
+          _moTaController.text = user.mota ?? "";
+          _phoneController.text = user.phoneNumber ;
           _gioiTinh ??= user.gioiTinh;
 
           return SingleChildScrollView(
@@ -145,11 +162,11 @@ class _UserInforScreenState extends State<UserInforScreen> {
                           radius: 60,
                           backgroundImage: _selectedImage != null
                               ? FileImage(_selectedImage!)
-                              : (user.avatarND != null
-                              ? NetworkImage(user.avatarND!)
-                          as ImageProvider
+                              : (user.avatarND.isNotEmpty
+                              ? NetworkImage(user.avatarND)
                               : const AssetImage(
-                              "assets/avatar_placeholder.png")),
+                              "assets/avatar_placeholder.png"))
+                          as ImageProvider
                         ),
                         IconButton(
                           icon: const Icon(Icons.camera_alt),
@@ -209,7 +226,7 @@ class _UserInforScreenState extends State<UserInforScreen> {
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.save),
                       label: const Text("Cập nhật"),
-                      onPressed: _updateUser, // ✅ chỉ gửi userName ẩn
+                      onPressed: _updateUser,
                     ),
                   ),
                 ],

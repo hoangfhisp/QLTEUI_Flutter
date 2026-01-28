@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
-class AdminScreen extends StatefulWidget {
-  const AdminScreen({super.key});
+class AdminHomeScreen extends StatefulWidget {
+  const AdminHomeScreen({super.key});
 
   @override
-  State<AdminScreen> createState() => _AdminScreenState();
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
 }
 
-class _AdminScreenState extends State<AdminScreen> {
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
   String? _email;
   String? _role;
   bool _isAllowed = false;
@@ -71,6 +71,7 @@ class _AdminScreenState extends State<AdminScreen> {
     return Scaffold(
       backgroundColor: Colors.blue.shade50,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text("🛠 Trang quản trị viên"),
         backgroundColor: Colors.blueAccent,
         actions: [
@@ -141,28 +142,46 @@ class _AdminScreenState extends State<AdminScreen> {
                 mainAxisSpacing: 16,
                 children: [
                   _buildFeatureCard(
-                    icon: Icons.pets,
-                    title: "Quản lý thú cưng",
-                    color: Colors.orangeAccent,
-                    onTap: () => Navigator.pushNamed(context, '/adminpets'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.assignment_turned_in,
-                    title: "Quản lý yêu cầu nhận nuôi",
-                    color: Colors.green,
-                    onTap: () => Navigator.pushNamed(context, '/adminadoptionrequest'),
-                  ),
-                  _buildFeatureCard(
-                    icon: Icons.vaccines,
-                    title: "Quản lý lịch tiêm phòng",
-                    color: Colors.lightBlue,
-                    onTap: () => Navigator.pushNamed(context, '/adminvaccinationschedule'),
-                  ),
-                  _buildFeatureCard(
                     icon: Icons.people,
                     title: "Quản lý người dùng",
                     color: Colors.deepPurpleAccent,
-                    onTap: () => Navigator.pushNamed(context, '/adminusers'),
+                    onTap: () => Navigator.pushNamed(context, '/admin_user'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.child_care_sharp,
+                    title: "Quản lý trẻ em của người dùng",
+                    color: Colors.deepOrangeAccent,
+                    onTap: () {
+                      final prefs = SharedPreferences.getInstance();
+                      prefs.then((p) {
+                        final token = p.getString('jwt_token');
+                        if (token != null && token.isNotEmpty) {
+                          Navigator.pushNamed(
+                            context,
+                            '/admin_children',
+                            arguments: {'token': token},
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Không tìm thấy token đăng nhập!")),
+                          );
+                        }
+                      });
+                    },
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.info_outline,
+                    title: "Quản lý refresh token",
+                    color: Colors.redAccent,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/admin_refresh_token'),
+                  ),
+                  _buildFeatureCard(
+                    icon: Icons.info_outline,
+                    title: "Thông tin cá nhân",
+                    color: Colors.lightBlueAccent,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/userinfo'),
                   ),
                 ],
               ),

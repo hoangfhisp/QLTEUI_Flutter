@@ -11,11 +11,16 @@ class Auth {
   }
 
   /// 🟠 Đăng xuất
-  static Future<void> logout() async {
+  static Future<bool> logout(String refreshToken) async {
     // Xoá token trong SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
-    await prefs.remove('refresh_token');
-    await prefs.remove('user_id');
+    final logout = await AuthService.UserLogOut(refreshToken);
+    if(logout.status){
+      await prefs.remove('jwt_token');
+      await prefs.remove('refresh_token');
+      await prefs.remove('user_id');
+      return true;
+    }
+    return false;
   }
 }
