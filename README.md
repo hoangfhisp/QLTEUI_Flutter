@@ -2,7 +2,7 @@
 
 # QLTE - Smart Child Protection & Remote Monitoring Platform
 
-### Cross-platform mobile ecosystem featuring real-time GPS tracking, 5-Hub SignalR telemetry, WebRTC P2P audio/video calling, native Android accessibility firewall, and emergency SOS rapid response.
+### Comprehensive cross-platform mobile ecosystem engineered to protect children 24/7 with real-time GPS geofencing, native Android accessibility firewall, 1-tap SOS emergency dispatch, and peer-to-peer WebRTC video calling.
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.9%2B-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev/)
 [![Dart](https://img.shields.io/badge/Dart-3.9%2B-0175C2?style=flat-square&logo=dart&logoColor=white)](https://dart.dev/)
@@ -12,7 +12,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-3DDC84?style=flat-square&logo=android&logoColor=white)](docs/DEPLOYMENT_GUIDE.md)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-[Quickstart](#quickstart) · [System Highlights](#system-highlights) · [Application Architecture](#application-architecture) · [Documentation Hub](#documentation-hub) · [Deployment & Build](#deployment--build) · [License](#license)
+[Project Overview](#project-overview) · [Core Capabilities](#core-capabilities--what-can-qlte-do) · [Role Matrix](#role-based-feature-matrix) · [System Highlights](#system-highlights) · [Architecture](#application-architecture) · [Quickstart](#quickstart) · [Documentation Hub](#documentation-hub) · [License](#license)
 
 </div>
 
@@ -20,6 +20,77 @@
 
 > [!IMPORTANT]
 > **Production Runtime Notice:** The child safety engine requires persistent background location permissions (`ACCESS_BACKGROUND_LOCATION`) and the native Android Accessibility Service (`MyAccessibilityService`) to enforce app blocking and study schedules. Please grant overlay and accessibility permissions on child devices during initial onboarding.
+
+---
+
+## Project Overview
+
+**QLTE (Quản Lý Trẻ Em)** is a full-featured, enterprise-grade mobile solution developed in Flutter to address critical modern parenting challenges:
+
+1. **Child Physical Safety**: Parents cannot be present 24/7 to know where their child is or whether they wander into dangerous zones (deep water bodies, abandoned sites, construction areas).
+2. **Digital Addiction & Academic Focus**: Children frequently spend class and study hours on distracting games and social media apps instead of focusing on their education.
+3. **Emergency Helplessness**: In dangerous situations (bullying, accidents, disorientation), traditional phone calls take too long; children need an instant, panic-free SOS broadcast with live coordinates.
+
+QLTE connects **Parents**, **Children**, and **Administrators** into an interconnected real-time safety network with sub-second synchronization powered by **5 dedicated SignalR Hubs**, **Google Maps / OpenStreetMap**, **WebRTC video calling**, and **native Android Accessibility Services**.
+
+---
+
+## Core Capabilities — What Can QLTE Do?
+
+### 📍 1. Real-Time GPS Tracking & Geofencing (Giám sát vị trí & Khoanh vùng an toàn)
+- **Live Breadcrumb Tracking**: Tracks child location on interactive maps (Google Maps & OpenStreetMap / Flutter Map) with continuous background updates.
+- **Dynamic Safe Zones (Vùng an toàn)**: Parents define safety perimeters around Home, School, or Grandparents' house with custom radius in meters.
+- **Danger Zones (Vùng nguy hiểm)**: Parents flag hazardous areas (rivers, lakes, high-traffic corridors).
+- **Instant Geofence Alerts**: The moment a child leaves a Safe Zone or steps into a Danger Zone, the system immediately pushes real-time alerts (`ChildLeftSafeZone`, `ChildEnteredDangerZone`) to the parent's phone.
+
+### 🚨 2. One-Tap Emergency SOS Rapid Dispatch (Báo động khẩn cấp 1 chạm)
+- **Instant Trigger**: The child taps the prominent SOS button on their home screen during an emergency.
+- **Multi-Sensor Alert**:
+  - The child's phone plays a loud audible alarm (`audioplayers` siren audio) and pulses haptic feedback (`vibration`).
+  - Broadcasts high-priority packets via `SOSHub` containing exact GPS latitude, longitude, and geocoded street address.
+- **Parent Emergency HUD**: The parent's device launches an emergency notification popup showing the child's live location on the map, a one-touch route navigation button, and emergency contact actions.
+
+### 🛡️ 3. Native Android Accessibility Firewall & Study Lock (Tường lửa chặn ứng dụng & Giờ học tập)
+- **Native Android Interception**: Built on a native Kotlin `MyAccessibilityService` linked via Flutter `MethodChannel` (`com.frontend_qlte/restriction`).
+- **Foreground App Monitoring**: Inspects `TYPE_WINDOW_STATE_CHANGED` events. If the child attempts to open a blacklisted app (e.g., TikTok, Facebook, YouTube, games) during study hours, the service displays a warning toast and instantly invokes `performGlobalAction(GLOBAL_ACTION_HOME)`.
+- **Scheduled Study Focus**: Parents schedule recurring study windows (e.g., 19:30 - 21:30 Monday to Friday). During these periods, firewalls activate automatically and notify the child with a non-dismissible study HUD.
+
+### 📞 4. Peer-to-Peer WebRTC Video & Audio Calling (Gọi Video & Thoại P2P)
+- **Low-Latency P2P Media**: Direct audio/video streaming between parent and child via `flutter_webrtc`.
+- **SignalR WebRTC Signaling**: Uses `/chathub` to exchange SDP Offers, SDP Answers, and ICE Candidates.
+- **In-App Messaging & Voice-to-Text**: Real-time text messaging with image attachments (`image_picker`) and speech-to-text input (`speech_to_text`).
+
+### 🔋 5. Hardware Telemetry & Remote Device Control (Giám sát phần cứng từ xa)
+- **Battery & Connectivity Monitor**: Live percentage display of the child's phone battery and online/offline connection state to prevent sudden lost-contact scenarios.
+- **Remote Lock / Unlock**: Parents can lock or unlock the child's device remotely via `deviceHub`.
+
+### 📅 6. Timetable & Exam Schedule Management (Thời khóa biểu & Lịch thi)
+- **School Timetable**: Organizes daily class schedules so children and parents stay aligned on school routines.
+- **Exam Countdown**: Keeps track of upcoming tests, subjects, exam rooms, and revision notes.
+
+### 🛠️ 7. Administrator Control Portal (Cổng quản trị viên hệ thống)
+- **User & Family Graph Audit**: Oversee parent-child relationships and manage user accounts.
+- **Active Session Audit**: View active JWT tokens and revoke refresh tokens (`admin_refresh_token_screen.dart`) to enforce platform-wide account security.
+
+---
+
+## Role-Based Feature Matrix
+
+| Feature / Capability | 👶 Child App (`/navigationbarchild`) | 👨‍👩‍👧 Parent App (`/navigationbar`) | 🛠️ Admin Portal (`/admin`) |
+| :--- | :---: | :---: | :---: |
+| **One-Tap Emergency SOS Trigger** | ✅ Full Access | ❌ (Receives Alert) | ❌ |
+| **Emergency Alert Notification & Map HUD** | ❌ | ✅ Full Access | ❌ |
+| **Real-Time GPS Location Transmission** | ✅ Background Service | ❌ | ❌ |
+| **Live Child Location Tracking on Map** | ❌ | ✅ Full Access | ❌ |
+| **Safe & Danger Geofence Management** | ❌ | ✅ Full Access | ❌ |
+| **App Restriction & Study Hours Config** | ❌ (Enforced Target) | ✅ Full Access | ❌ |
+| **Native Android App Blocking (Accessibility)**| ✅ Native Engine | ❌ | ❌ |
+| **Remote Device Lock / Battery Telemetry** | ❌ (Hardware Telemetry) | ✅ Full Access | ❌ |
+| **P2P WebRTC Video & Audio Calling** | ✅ Full Access | ✅ Full Access | ❌ |
+| **Real-time Chat with Speech-to-Text** | ✅ Full Access | ✅ Full Access | ❌ |
+| **Class Timetable & Exam Schedule** | ✅ Read-Only View | ✅ Create & Edit | ❌ |
+| **Family Hierarchy & User Management** | ❌ | ❌ | ✅ Full Access |
+| **JWT Refresh Token Audit & Revocation** | ❌ | ❌ | ✅ Full Access |
 
 ---
 
