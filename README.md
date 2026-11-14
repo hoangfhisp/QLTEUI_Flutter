@@ -37,38 +37,38 @@ QLTE connects **Parents**, **Children**, and **Administrators** into an intercon
 
 ## Core Capabilities — What Can QLTE Do?
 
-### 📍 1. Real-Time GPS Tracking & Geofencing (Giám sát vị trí & Khoanh vùng an toàn)
+### 1. Real-Time GPS Tracking & Geofencing (Giám sát vị trí & Khoanh vùng an toàn)
 - **Live Breadcrumb Tracking**: Tracks child location on interactive maps (Google Maps & OpenStreetMap / Flutter Map) with continuous background updates.
 - **Dynamic Safe Zones (Vùng an toàn)**: Parents define safety perimeters around Home, School, or Grandparents' house with custom radius in meters.
 - **Danger Zones (Vùng nguy hiểm)**: Parents flag hazardous areas (rivers, lakes, high-traffic corridors).
 - **Instant Geofence Alerts**: The moment a child leaves a Safe Zone or steps into a Danger Zone, the system immediately pushes real-time alerts (`ChildLeftSafeZone`, `ChildEnteredDangerZone`) to the parent's phone.
 
-### 🚨 2. One-Tap Emergency SOS Rapid Dispatch (Báo động khẩn cấp 1 chạm)
+### 2. One-Tap Emergency SOS Rapid Dispatch (Báo động khẩn cấp 1 chạm)
 - **Instant Trigger**: The child taps the prominent SOS button on their home screen during an emergency.
 - **Multi-Sensor Alert**:
   - The child's phone plays a loud audible alarm (`audioplayers` siren audio) and pulses haptic feedback (`vibration`).
   - Broadcasts high-priority packets via `SOSHub` containing exact GPS latitude, longitude, and geocoded street address.
 - **Parent Emergency HUD**: The parent's device launches an emergency notification popup showing the child's live location on the map, a one-touch route navigation button, and emergency contact actions.
 
-### 🛡️ 3. Native Android Accessibility Firewall & Study Lock (Tường lửa chặn ứng dụng & Giờ học tập)
+### 3. Native Android Accessibility Firewall & Study Lock (Tường lửa chặn ứng dụng & Giờ học tập)
 - **Native Android Interception**: Built on a native Kotlin `MyAccessibilityService` linked via Flutter `MethodChannel` (`com.frontend_qlte/restriction`).
 - **Foreground App Monitoring**: Inspects `TYPE_WINDOW_STATE_CHANGED` events. If the child attempts to open a blacklisted app (e.g., TikTok, Facebook, YouTube, games) during study hours, the service displays a warning toast and instantly invokes `performGlobalAction(GLOBAL_ACTION_HOME)`.
 - **Scheduled Study Focus**: Parents schedule recurring study windows (e.g., 19:30 - 21:30 Monday to Friday). During these periods, firewalls activate automatically and notify the child with a non-dismissible study HUD.
 
-### 📞 4. Peer-to-Peer WebRTC Video & Audio Calling (Gọi Video & Thoại P2P)
+### 4. Peer-to-Peer WebRTC Video & Audio Calling (Gọi Video & Thoại P2P)
 - **Low-Latency P2P Media**: Direct audio/video streaming between parent and child via `flutter_webrtc`.
 - **SignalR WebRTC Signaling**: Uses `/chathub` to exchange SDP Offers, SDP Answers, and ICE Candidates.
 - **In-App Messaging & Voice-to-Text**: Real-time text messaging with image attachments (`image_picker`) and speech-to-text input (`speech_to_text`).
 
-### 🔋 5. Hardware Telemetry & Remote Device Control (Giám sát phần cứng từ xa)
+### 5. Hardware Telemetry & Remote Device Control (Giám sát phần cứng từ xa)
 - **Battery & Connectivity Monitor**: Live percentage display of the child's phone battery and online/offline connection state to prevent sudden lost-contact scenarios.
 - **Remote Lock / Unlock**: Parents can lock or unlock the child's device remotely via `deviceHub`.
 
-### 📅 6. Timetable & Exam Schedule Management (Thời khóa biểu & Lịch thi)
+### 6. Timetable & Exam Schedule Management (Thời khóa biểu & Lịch thi)
 - **School Timetable**: Organizes daily class schedules so children and parents stay aligned on school routines.
 - **Exam Countdown**: Keeps track of upcoming tests, subjects, exam rooms, and revision notes.
 
-### 🛠️ 7. Administrator Control Portal (Cổng quản trị viên hệ thống)
+### 7. Administrator Control Portal (Cổng quản trị viên hệ thống)
 - **User & Family Graph Audit**: Oversee parent-child relationships and manage user accounts.
 - **Active Session Audit**: View active JWT tokens and revoke refresh tokens (`admin_refresh_token_screen.dart`) to enforce platform-wide account security.
 
@@ -76,21 +76,21 @@ QLTE connects **Parents**, **Children**, and **Administrators** into an intercon
 
 ## Role-Based Feature Matrix
 
-| Feature / Capability | 👶 Child App (`/navigationbarchild`) | 👨‍👩‍👧 Parent App (`/navigationbar`) | 🛠️ Admin Portal (`/admin`) |
+| Capability / Feature | Child App (`/navigationbarchild`) | Parent App (`/navigationbar`) | Admin Portal (`/admin`) |
 | :--- | :---: | :---: | :---: |
-| **One-Tap Emergency SOS Trigger** | ✅ Full Access | ❌ (Receives Alert) | ❌ |
-| **Emergency Alert Notification & Map HUD** | ❌ | ✅ Full Access | ❌ |
-| **Real-Time GPS Location Transmission** | ✅ Background Service | ❌ | ❌ |
-| **Live Child Location Tracking on Map** | ❌ | ✅ Full Access | ❌ |
-| **Safe & Danger Geofence Management** | ❌ | ✅ Full Access | ❌ |
-| **App Restriction & Study Hours Config** | ❌ (Enforced Target) | ✅ Full Access | ❌ |
-| **Native Android App Blocking (Accessibility)**| ✅ Native Engine | ❌ | ❌ |
-| **Remote Device Lock / Battery Telemetry** | ❌ (Hardware Telemetry) | ✅ Full Access | ❌ |
-| **P2P WebRTC Video & Audio Calling** | ✅ Full Access | ✅ Full Access | ❌ |
-| **Real-time Chat with Speech-to-Text** | ✅ Full Access | ✅ Full Access | ❌ |
-| **Class Timetable & Exam Schedule** | ✅ Read-Only View | ✅ Create & Edit | ❌ |
-| **Family Hierarchy & User Management** | ❌ | ❌ | ✅ Full Access |
-| **JWT Refresh Token Audit & Revocation** | ❌ | ❌ | ✅ Full Access |
+| **One-Tap Emergency SOS Trigger** | Supported | Not Applicable | Not Applicable |
+| **Emergency Alert Notification & Map HUD** | Not Applicable | Supported | Not Applicable |
+| **Real-Time GPS Location Transmission** | Background Service | Not Applicable | Not Applicable |
+| **Live Child Location Tracking on Map** | Not Applicable | Supported | Not Applicable |
+| **Safe & Danger Geofence Management** | Not Applicable | Supported | Not Applicable |
+| **App Restriction & Study Hours Config** | Enforced Target | Supported | Not Applicable |
+| **Native Android App Blocking (Accessibility)**| Native Engine | Not Applicable | Not Applicable |
+| **Remote Device Lock / Battery Telemetry** | Hardware Telemetry | Supported | Not Applicable |
+| **P2P WebRTC Video & Audio Calling** | Supported | Supported | Not Applicable |
+| **Real-time Chat with Speech-to-Text** | Supported | Supported | Not Applicable |
+| **Class Timetable & Exam Schedule** | Read-Only View | Supported | Not Applicable |
+| **Family Hierarchy & User Management** | Not Applicable | Not Applicable | Supported |
+| **JWT Refresh Token Audit & Revocation** | Not Applicable | Not Applicable | Supported |
 
 ---
 
